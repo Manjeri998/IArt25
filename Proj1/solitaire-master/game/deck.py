@@ -49,33 +49,35 @@ class Deck:
 
     def load_piles(self, display_size):
         display_width, display_height = display_size
-        pile_spacing = 50
+        pile_spacing = 25
 
         start_x = 50
         start_y = self.card_size[1] + 100
 
         foundation_x_step = self.card_size[0] + pile_spacing
-        foundation_start_x = display_width - (foundation_x_step * 4)
+        foundation_start_x = 50
 
-        tableau1 = Pile([self.cards[0]], start_x, start_y, self.card_size)
-        tableau2 = Pile(self.cards[1:3], start_x + self.card_size[0] + pile_spacing, start_y, self.card_size)
-        tableau3 = Pile(self.cards[3:6], start_x + self.card_size[0]*2 + pile_spacing*2, start_y, self.card_size)
-        tableau4 = Pile(self.cards[6:10], start_x + self.card_size[0]*3 + pile_spacing*3, start_y, self.card_size)
-        tableau5 = Pile(self.cards[10:15], start_x + self.card_size[0]*4 + pile_spacing*4, start_y, self.card_size)
-        tableau6 = Pile(self.cards[15:21], start_x + self.card_size[0]*5 + pile_spacing*5, start_y, self.card_size)
-        tableau7 = Pile(self.cards[21:28], start_x + self.card_size[0]*6 + pile_spacing*6, start_y, self.card_size)
-
-        stock = Pile(self.cards[28:], start_x, pile_spacing, self.card_size, pile_type="stock")
-        waste = Pile([], start_x + self.card_size[0] + pile_spacing, pile_spacing, self.card_size, pile_type="waste")
+        tableau1 = Pile(self.cards[0:7], start_x, start_y, self.card_size)
+        tableau2 = Pile(self.cards[7:14], start_x + self.card_size[0] + pile_spacing, start_y, self.card_size)
+        tableau3 = Pile(self.cards[14:21], start_x + self.card_size[0]*2 + pile_spacing*2, start_y, self.card_size)
+        tableau4 = Pile(self.cards[21:28], start_x + self.card_size[0]*3 + pile_spacing*3, start_y, self.card_size)
+        tableau5 = Pile(self.cards[28:34], start_x + self.card_size[0]*4 + pile_spacing*4, start_y, self.card_size)
+        tableau6 = Pile(self.cards[34:40], start_x + self.card_size[0]*5 + pile_spacing*5, start_y, self.card_size)
+        tableau7 = Pile(self.cards[40:46], start_x + self.card_size[0]*6 + pile_spacing*6, start_y, self.card_size)
+        tableau8 = Pile(self.cards[46:52], start_x + self.card_size[0]*7 + pile_spacing*7, start_y, self.card_size)
+        
 
         foundation1 = Pile([], foundation_start_x, pile_spacing, self.card_size, pile_type="foundation")
         foundation2 = Pile([], foundation_start_x + foundation_x_step, pile_spacing, self.card_size, pile_type="foundation")
         foundation3 = Pile([], foundation_start_x + foundation_x_step*2, pile_spacing, self.card_size, pile_type="foundation")
         foundation4 = Pile([], foundation_start_x + foundation_x_step*3, pile_spacing, self.card_size, pile_type="foundation")
+        foundation5 = Pile([], foundation_start_x + foundation_x_step*4, pile_spacing, self.card_size, pile_type="foundation")
+        foundation6 = Pile([], foundation_start_x + foundation_x_step*5, pile_spacing, self.card_size, pile_type="foundation")
+        foundation7 = Pile([], foundation_start_x + foundation_x_step*6, pile_spacing, self.card_size, pile_type="foundation")
+        foundation8 = Pile([], foundation_start_x + foundation_x_step*7, pile_spacing, self.card_size, pile_type="foundation")
 
-        self.piles = [tableau1, tableau2, tableau3, tableau4, tableau5, tableau6, tableau7,
-                      stock, waste,
-                      foundation1, foundation2, foundation3, foundation4]
+        self.piles = [tableau1, tableau2, tableau3, tableau4, tableau5, tableau6, tableau7, tableau8,
+                      foundation1, foundation2, foundation3, foundation4, foundation5, foundation6, foundation7, foundation8]
 
     def shuffle_cards(self):
         random.shuffle(self.cards)
@@ -151,10 +153,7 @@ class Deck:
                 if self.selection and self.selection_rect != None and card == self.selected_cards[0]:
                     pygame.draw.rect(game_display, self.selection_color, self.selection_rect)
 
-                if card.face_up:  
-                    img = self.card_images[card.name_of_image]
-                else:
-                    img = self.card_back
+                img = self.card_images[card.name_of_image]
 
                 game_display.blit(img, [card.x, card.y])
 
