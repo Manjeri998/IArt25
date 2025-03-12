@@ -30,6 +30,11 @@ class Pile:
             self.order = self.Order(foundation=None, rank=None, color_suit=None)
             self.face_up = 'none'
             self.height = self.card_height
+        elif self.pile_type == 'free-cell':
+            self.fanned = False
+            self.order = self.Order(foundation=None, rank=None, color_suit=None)
+            self.face_up = 'all'
+            self.height = self.card_height
 
         self.max_card_spacing = 60
         self.min_card_spacing = 10
@@ -145,6 +150,14 @@ class Pile:
         # cannot transfer to the deck
         if pile_to_transfer_to.pile_type == 'stock' or pile_to_transfer_to.pile_type == 'waste':
             valid = False
+
+        if pile_to_transfer_to.pile_type == 'free-cell':
+            if bottom_card != None:
+                valid = False
+            else:
+                if len(selected_cards) > 1:
+                    valid = False
+                
 
         # if a pile is empty only certain cards can be placed there
         if bottom_card == None:

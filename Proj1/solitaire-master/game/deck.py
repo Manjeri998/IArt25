@@ -22,6 +22,7 @@ class Deck:
         self.selection_rect = None
         self.selection_color = (255, 255, 0)
         self.empty_color = (100, 100, 200)
+        self.empty_color2 = (100, 100, 230)
 
         # these attributes can be modified when undoing/redoing
         self.piles = piles
@@ -67,10 +68,10 @@ class Deck:
         tableau8 = Pile(self.cards[46:52], start_x + self.card_size[0]*7 + pile_spacing*7, start_y, self.card_size)
         
 
-        foundation1 = Pile([], foundation_start_x, pile_spacing, self.card_size, pile_type="foundation")
-        foundation2 = Pile([], foundation_start_x + foundation_x_step, pile_spacing, self.card_size, pile_type="foundation")
-        foundation3 = Pile([], foundation_start_x + foundation_x_step*2, pile_spacing, self.card_size, pile_type="foundation")
-        foundation4 = Pile([], foundation_start_x + foundation_x_step*3, pile_spacing, self.card_size, pile_type="foundation")
+        foundation1 = Pile([], foundation_start_x, pile_spacing, self.card_size, pile_type="free-cell")
+        foundation2 = Pile([], foundation_start_x + foundation_x_step, pile_spacing, self.card_size, pile_type="free-cell")
+        foundation3 = Pile([], foundation_start_x + foundation_x_step*2, pile_spacing, self.card_size, pile_type="free-cell")
+        foundation4 = Pile([], foundation_start_x + foundation_x_step*3, pile_spacing, self.card_size, pile_type="free-cell")
         foundation5 = Pile([], foundation_start_x + foundation_x_step*4, pile_spacing, self.card_size, pile_type="foundation")
         foundation6 = Pile([], foundation_start_x + foundation_x_step*5, pile_spacing, self.card_size, pile_type="foundation")
         foundation7 = Pile([], foundation_start_x + foundation_x_step*6, pile_spacing, self.card_size, pile_type="foundation")
@@ -149,6 +150,8 @@ class Deck:
         for pile in self.piles:
             if pile.pile_type == 'foundation' or pile.pile_type == 'deck' and len(pile.cards) == 0:
                 pygame.draw.rect(game_display, self.empty_color, [pile.x, pile.y, pile.card_width, pile.card_height])
+            if pile.pile_type == 'free-cell' and len(pile.cards) == 0:
+                pygame.draw.rect(game_display, self.empty_color2, [pile.x, pile.y, pile.card_width, pile.card_height])
             for card in pile.cards:
                 if self.selection and self.selection_rect != None and card == self.selected_cards[0]:
                     pygame.draw.rect(game_display, self.selection_color, self.selection_rect)
