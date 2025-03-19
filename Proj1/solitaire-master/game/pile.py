@@ -20,16 +20,6 @@ class Pile:
             self.order = self.Order(foundation='ace', rank=1, color_suit='same-suit')
             self.face_up = 'all'
             self.height = self.card_height
-        elif self.pile_type == 'waste':
-            self.fanned = False
-            self.order = self.Order(foundation=None, rank=None, color_suit=None)
-            self.face_up = 'all'
-            self.height = self.card_height
-        elif self.pile_type == 'stock':
-            self.fanned = False
-            self.order = self.Order(foundation=None, rank=None, color_suit=None)
-            self.face_up = 'none'
-            self.height = self.card_height
         elif self.pile_type == 'free-cell':
             self.fanned = False
             self.order = self.Order(foundation=None, rank=None, color_suit=None)
@@ -46,6 +36,9 @@ class Pile:
         self.y = y
 
         self.update()
+    
+    def __len__(self):
+        return len(self.cards)
 
     @property
     def pile_bottom(self):
@@ -61,6 +54,9 @@ class Pile:
                         card.face_up = True
                 elif self.face_up == 'all':
                     card.face_up = True
+    
+    def is_foundation(self):
+        return self.pile_type == "foundation"
 
     def update_positions(self):
         if len(self.cards) != 0:
@@ -146,31 +142,33 @@ class Pile:
         top_card = selected_cards[0]
 
         valid = True
-        
+
         # cannot transfer to the deck
         if pile_to_transfer_to.pile_type == 'stock' or pile_to_transfer_to.pile_type == 'waste':
             valid = False
 
         if pile_to_transfer_to.pile_type == 'free-cell':
-            if bottom_card != None:
+            if bottom_card is not None:
                 valid = False
             else:
                 if len(selected_cards) > 1:
                     valid = False
-                
 
         # if a pile is empty only certain cards can be placed there
-        if bottom_card == None:
-            if pile_to_transfer_to.order.foundation != None:
+        if bottom_card is None:
+            if pile_to_transfer_to.order.foundation is not None:
                 if top_card.rank != pile_to_transfer_to.order.foundation:
                     valid = False
         else:
             # cards must be ordered depending on the pile they are in
-            if pile_to_transfer_to.order.rank != None:
+            if pile_to_transfer_to.order.rank is not None:
                 rank_index = ranks.index(bottom_card.rank)
-                if top_card.rank != ranks[rank_index + pile_to_transfer_to.order.rank]:
+                target_index = rank_index + pile_to_transfer_to.order.rank
+                if target_index < 0 or target_index >= len(ranks):
                     valid = False
-            if pile_to_transfer_to.order.color_suit != None:
+                elif top_card.rank != ranks[target_index]:
+                    valid = False
+            if pile_to_transfer_to.order.color_suit is not None:
                 if pile_to_transfer_to.order.color_suit == 'alt-color':
                     if top_card.color == bottom_card.color:
                         valid = False
@@ -184,7 +182,8 @@ class Pile:
         if self.valid_transfer(pile_to_transfer_to, selected_cards, ranks):
             for card in selected_cards:
                 pile_to_transfer_to.cards.append(card)
-                self.cards.remove(card)
+                # Find and remove the card from self.cards by matching its unique attribute
+                self.cards = [c for c in self.cards if c.name_of_image != card.name_of_image]
             return True
         else:
             return False

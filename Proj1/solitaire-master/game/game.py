@@ -2,6 +2,7 @@ import pygame
 from deck import Deck
 from ui import Text, Button, RadioGroup, Radio, Checkbox
 import settings_manager, history_manager
+from queue import PriorityQueue
 
 
 white = (255, 255, 255)
@@ -66,7 +67,8 @@ def win_screen():
 def game_loop():
     undo_button = Button(display_dimensions, "Undo", (10, 10), (30, 30), grey, centered=False, text_size=11, action="undo")
     pause_button = Button(display_dimensions, "Pause", (display_dimensions[0]-50, 10), (40, 30), grey, centered=False, text_size=10, action="pause")
-    buttons = [undo_button, pause_button]
+    astar_button = Button(display_dimensions, "A*", (10, 60), (30, 30), grey, centered=False, text_size=10, action="astar")
+    buttons = [undo_button, pause_button, astar_button]
 
     deck = Deck()
     deck.load_cards()
@@ -99,6 +101,10 @@ def game_loop():
                         if button.check_if_clicked(mouse_pos):
                             if button.action == "undo":
                                 deck = hm.undo(deck)
+                            if button.action == "astar":
+                                a_star_solve(deck)
+                                deck.display(game_display)
+                                pygame.display.update()
                 if event.button == 3:
                     deck.handle_right_click(mouse_pos)
 
@@ -193,5 +199,95 @@ def start_menu():
         pygame.display.update()
         clock.tick(FPS)
 
+def a_star_solve(deck):
+    """
+    Resolve o jogo de Paciência usando o algoritmo A* e exibe o estado atual no jogo.
+    """
+    open_set = PriorityQueue()
+    initial_state = deck.get_state()
+    open_set.put((0, initial_state))  # Use the hashable state
+    came_from = {}
+    g_score = {initial_state: 0}
+    f_score = {initial_state: heuristic(deck)}
+    state_to_deck = {initial_state: deck}
+    visited_states = set()  # Track visited states
+
+    while not open_set.empty():
+        _, current_state = open_set.get()
+
+        # Skip if the state has already been visited
+        if current_state in visited_states:
+            continue
+        visited_states.add(current_state)
+
+        current_deck = state_to_deck[current_state]
+
+        # Display the current state of the deck
+        game_display.fill(blue)
+        current_deck.display(game_display)
+        pygame.display.update()
+        pygame.time.delay(500)  # Add a delay to allow the state to be displayed
+
+        if current_deck.check_for_win():
+            reconstruct_path(came_from, current_state, state_to_deck)
+            return True
+
+        for neighbor in get_valid_moves(current_deck):
+            neighbor_deck = current_deck.clone()
+            neighbor_deck.make_move(neighbor)
+            neighbor_state = neighbor_deck.get_state()
+
+            if neighbor_state in visited_states:
+                continue
+
+            temp_g_score = g_score[current_state] + 1
+
+            if neighbor_state not in g_score or temp_g_score < g_score[neighbor_state]:
+                came_from[neighbor_state] = current_state
+                g_score[neighbor_state] = temp_g_score
+                f_score[neighbor_state] = temp_g_score + heuristic(neighbor_deck)
+                open_set.put((f_score[neighbor_state], neighbor_state))
+                state_to_deck[neighbor_state] = neighbor_deck
+
+    return False  # Se não encontrar solução
+
+def heuristic(deck):
+    """
+    Heurística simples: conta o número de cartas que ainda precisam ser movidas para as bases.
+    """
+    return sum(len(pile) for pile in deck.piles if not pile.is_foundation())
+
+def get_valid_moves(self):
+    """
+    Returns a list of valid moves as tuples (source_pile, target_pile, selected_cards).
+    """
+    valid_moves = []
+
+    for source_pile in self.piles:
+        if not source_pile.cards:
+            continue
+
+        for target_pile in self.piles:
+            if source_pile == target_pile:
+                continue
+
+            for i in range(len(source_pile.cards)):
+                selected_cards = source_pile.cards[i:]
+                if source_pile.valid_transfer(target_pile, selected_cards, self.ranks):
+                    valid_moves.append((source_pile, target_pile, selected_cards))
+
+    return valid_moves
+
+def reconstruct_path(came_from, current):
+    """
+    Reconstrói e imprime o caminho da solução.
+    """
+    path = []
+    while current in came_from:
+        path.append(current)
+        current = came_from[current]
+    path.reverse()
+    for state in path:
+        print(state)  # Aqui poderia ser uma renderização do estado
 
 start_menu()

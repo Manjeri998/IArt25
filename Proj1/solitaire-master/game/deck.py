@@ -1,3 +1,4 @@
+from copy import copy, deepcopy
 import os
 import random
 import pygame
@@ -32,9 +33,27 @@ class Deck:
         name_of_image = os.path.join('resources', 'card_back.png')
         self.card_back_image = pygame.image.load(name_of_image)
         self.card_back = self.resize_card_back()
+    
+    def __str__(self):
+        """
+        Returns a string representation of the deck's state.
+        Each pile and its cards are displayed.
+        """
+        result = []
+        for i, pile in enumerate(self.piles):
+            pile_cards = [card.name_of_image for card in pile.cards]
+            result.append(f"Pile {i}: {pile_cards}")
+        return "\n".join(result)
 
     def resize_card_back(self):
         return pygame.transform.scale(self.card_back_image, self.card_size)
+
+    def clone(self):
+        new_deck = Deck(
+            piles=deepcopy(self.piles),
+            card_size=self.card_size      
+        )
+        return new_deck
 
     def resize_card_images(self):
         for name_of_image, card_image in self.card_images.items():
@@ -82,6 +101,35 @@ class Deck:
 
     def shuffle_cards(self):
         random.shuffle(self.cards)
+    
+    def get_possible_moves(deck):
+        """
+        Retorna uma lista de estados possíveis do baralho após realizar movimentos válidos.
+        """
+        valid_moves = []
+        
+        for source_pile in deck.piles:  # Itera sobre todas as pilhas como possíveis fontes de movimento
+            if not source_pile.cards:  # Se a pilha estiver vazia, não há movimento possível
+                continue
+            
+            for dest_pile in deck.piles:  # Itera sobre todas as pilhas como possíveis destinos
+                if source_pile == dest_pile:  # Evita mover para a mesma pilha
+                    continue
+                
+                # Tenta mover diferentes quantidades de cartas do topo da pilha
+                for i in range(len(source_pile.cards)):
+                    selected_cards = source_pile.cards[i:]  # Seleciona um subconjunto das cartas
+                    if source_pile.valid_transfer(dest_pile, selected_cards, deck.ranks):
+                        new_deck = deck.clone()  # Clona o baralho para um novo estado
+                        new_source_pile = new_deck.piles[deck.piles.index(source_pile)]
+                        new_dest_pile = new_deck.piles[deck.piles.index(dest_pile)]
+                        
+                        new_source_pile.transfer_cards(selected_cards, new_dest_pile, deck.ranks)
+                        valid_moves.append(new_deck)
+        
+        return valid_moves
+
+
 
     def deselect(self):
         self.selection = False
@@ -134,6 +182,25 @@ class Deck:
             self.deselect()
         
         return piles_to_update, valid_move
+    
+    def get_state(self):
+        """
+        Returns a hashable representation of the deck's state.
+        The state is divided into foundations, tableau, and free cells.
+        """
+        foundations = tuple(
+            tuple(card.name_of_image for card in pile.cards)
+            for pile in self.piles if pile.pile_type == "foundation"
+        )
+        tableau = tuple(
+            tuple(card.name_of_image for card in pile.cards)
+            for pile in self.piles if pile.pile_type == "tableau"
+        )
+        free_cells = tuple(
+            tuple(card.name_of_image for card in pile.cards)
+            for pile in self.piles if pile.pile_type == "free-cell"
+        )
+        return (foundations, tableau, free_cells)
 
     def handle_right_click(self, mouse_position):
         self.deselect()
@@ -160,6 +227,17 @@ class Deck:
 
                 game_display.blit(img, [card.x, card.y])
 
+    def make_move(self, move):
+        """
+        Applies the given move to the deck.
+        A move is represented as a tuple containing the source pile, target pile, and the selected cards.
+        """
+        source_pile, target_pile, selected_cards = move
+
+        source_index = next(i for i, p in enumerate(self.piles) if p.pile_type == source_pile.pile_type and len(p.cards) == len(source_pile.cards))
+        target_index = next(i for i, p in enumerate(self.piles) if p.pile_type == target_pile.pile_type and len(p.cards) == len(target_pile.cards))
+
+        self.piles[source_index].transfer_cards(selected_cards, self.piles[target_index], self.ranks)
 
 class CompressedDeck:
     _ids = count(0)
