@@ -9,6 +9,10 @@ from card import Card
 
 # the deck class should handle the clicking of the cards
 class Deck:
+    def __lt__(self, other):
+        return id(self) < id(other)
+    
+    
     def __init__(self, piles=[], card_images={}, card_size=(100, 150)):
         # cards list is only used when starting/restarting a game
         self.cards = []

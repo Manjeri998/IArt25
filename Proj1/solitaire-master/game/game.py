@@ -2,6 +2,7 @@ import pygame
 from deck import Deck
 from ui import Text, Button, RadioGroup, Radio, Checkbox
 import settings_manager, history_manager
+import time
 from queue import PriorityQueue
 
 
@@ -93,6 +94,7 @@ def game_loop():
                 mouse_pos = pygame.mouse.get_pos()
                 if event.button == 1:
                     piles_to_update, valid_move = deck.handle_click(mouse_pos)
+                    print(piles_to_update)
                     deck.update(piles_to_update, display_dimensions[1])
                     if valid_move:
                         hm.valid_move_made(deck)
@@ -204,24 +206,29 @@ def a_star_solve(deck):
     Resolve o jogo de Paciência usando o algoritmo A* e exibe o estado atual no jogo.
     """
     open_set = PriorityQueue()
-    initial_state = deck.get_state()
+    initial_state = deck
     open_set.put((0, initial_state))  # Use the hashable state
     came_from = {}
     g_score = {initial_state: 0}
     f_score = {initial_state: heuristic(deck)}
-    state_to_deck = {initial_state: deck}
     visited_states = set()  # Track visited states
+    start_time = time.time()
+    best_state = initial_state
 
     while not open_set.empty():
-        _, current_state = open_set.get()
+        _, current_deck = open_set.get()
+
+        if (time.time() - start_time) > 10:
+            print("Time limit reached")
+            reconstruct_path(came_from, best_state)
+            return False
 
         # Skip if the state has already been visited
-        if current_state in visited_states:
+        if current_deck in visited_states:
             continue
-        visited_states.add(current_state)
+        visited_states.add(current_deck)
 
-        current_deck = state_to_deck[current_state]
-
+        print("Current state: {}".format(current_deck))
         # Display the current state of the deck
         game_display.fill(blue)
         current_deck.display(game_display)
@@ -229,25 +236,25 @@ def a_star_solve(deck):
         pygame.time.delay(500)  # Add a delay to allow the state to be displayed
 
         if current_deck.check_for_win():
-            reconstruct_path(came_from, current_state, state_to_deck)
+            reconstruct_path(came_from, current_deck)
             return True
 
         for neighbor in get_valid_moves(current_deck):
             neighbor_deck = current_deck.clone()
-            neighbor_deck.make_move(neighbor)
-            neighbor_state = neighbor_deck.get_state()
+            neighbor_deck.update(neighbor, display_dimensions[1])
+            neighbor_state = neighbor_deck
 
             if neighbor_state in visited_states:
                 continue
 
-            temp_g_score = g_score[current_state] + 1
+            temp_g_score = g_score[current_deck] + 1
 
             if neighbor_state not in g_score or temp_g_score < g_score[neighbor_state]:
-                came_from[neighbor_state] = current_state
+                came_from[neighbor_state] = current_deck
                 g_score[neighbor_state] = temp_g_score
                 f_score[neighbor_state] = temp_g_score + heuristic(neighbor_deck)
                 open_set.put((f_score[neighbor_state], neighbor_state))
-                state_to_deck[neighbor_state] = neighbor_deck
+                best_state = neighbor_state
 
     return False  # Se não encontrar solução
 
@@ -274,7 +281,7 @@ def get_valid_moves(self):
             for i in range(len(source_pile.cards)):
                 selected_cards = source_pile.cards[i:]
                 if source_pile.valid_transfer(target_pile, selected_cards, self.ranks):
-                    valid_moves.append((source_pile, target_pile, selected_cards))
+                    valid_moves.append((source_pile, target_pile))
 
     return valid_moves
 
@@ -288,6 +295,8 @@ def reconstruct_path(came_from, current):
         current = came_from[current]
     path.reverse()
     for state in path:
+        state.display(game_display)
+        pygame.display.update()
         print(state)  # Aqui poderia ser uma renderização do estado
 
 start_menu()
