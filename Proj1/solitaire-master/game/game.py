@@ -13,6 +13,10 @@ blue = (50, 50, 190)
 red = (190, 50, 50)
 grey = (100, 100, 100)
 
+al_deck = Deck()
+
+is_a_star = False
+
 display_dimensions = (1100, 800)
 
 pygame.init()
@@ -69,7 +73,9 @@ def game_loop():
     undo_button = Button(display_dimensions, "Undo", (10, 10), (30, 30), grey, centered=False, text_size=11, action="undo")
     pause_button = Button(display_dimensions, "Pause", (display_dimensions[0]-50, 10), (40, 30), grey, centered=False, text_size=10, action="pause")
     astar_button = Button(display_dimensions, "A*", (10, 60), (30, 30), grey, centered=False, text_size=10, action="astar")
-    buttons = [undo_button, pause_button, astar_button]
+    next_button = Button(display_dimensions, "Next", (10, 110), (30, 30), grey, centered=False, text_size=10, action="next")
+    buttons = [undo_button, pause_button, astar_button, next_button ]
+    a_star_states = []
 
     deck = Deck()
     deck.load_cards()
@@ -104,9 +110,12 @@ def game_loop():
                             if button.action == "undo":
                                 deck = hm.undo(deck)
                             if button.action == "astar":
-                                a_star_solve(deck)
-                                deck.display(game_display)
-                                pygame.display.update()
+                                a_star_states = a_star_solve(deck)
+                                print(a_star_states)
+                            if button.action == "next":
+                                print(deck)
+                                deck = a_star_states.pop(0)
+
                 if event.button == 3:
                     deck.handle_right_click(mouse_pos)
 
@@ -205,6 +214,7 @@ def a_star_solve(deck):
     """
     Resolve o jogo de Paciência usando o algoritmo A* e exibe o estado atual no jogo.
     """
+    is_a_star = True
     open_set = PriorityQueue()
     initial_state = deck
     open_set.put((0, initial_state))  # Use the hashable state
@@ -220,8 +230,7 @@ def a_star_solve(deck):
 
         if (time.time() - start_time) > 10:
             print("Time limit reached")
-            reconstruct_path(came_from, best_state)
-            return False
+            return reconstruct_path(came_from, best_state)
 
         # Skip if the state has already been visited
         if current_deck in visited_states:
@@ -229,19 +238,17 @@ def a_star_solve(deck):
         visited_states.add(current_deck)
 
         print("Current state: {}".format(current_deck))
-        # Display the current state of the deck
-        game_display.fill(blue)
-        current_deck.display(game_display)
-        pygame.display.update()
-        pygame.time.delay(500)  # Add a delay to allow the state to be displayed
+        # Display the current state of the dec
 
         if current_deck.check_for_win():
             reconstruct_path(came_from, current_deck)
             return True
 
         for neighbor in get_valid_moves(current_deck):
+            print(neighbor)
             neighbor_deck = current_deck.clone()
-            neighbor_deck.update(neighbor, display_dimensions[1])
+            neighbor_deck.make_move(neighbor)
+            print("Neighbor deck: {}".format(neighbor_deck))
             neighbor_state = neighbor_deck
 
             if neighbor_state in visited_states:
@@ -256,7 +263,7 @@ def a_star_solve(deck):
                 open_set.put((f_score[neighbor_state], neighbor_state))
                 best_state = neighbor_state
 
-    return False  # Se não encontrar solução
+    return []  # Se não encontrar solução
 
 def heuristic(deck):
     """
@@ -267,21 +274,28 @@ def heuristic(deck):
 def get_valid_moves(self):
     """
     Returns a list of valid moves as tuples (source_pile, target_pile, selected_cards).
+    Ensures selected cards are valid, in order, and on top of the pile.
     """
     valid_moves = []
 
     for source_pile in self.piles:
         if not source_pile.cards:
-            continue
+            continue  # Skip empty piles
 
         for target_pile in self.piles:
             if source_pile == target_pile:
-                continue
+                continue  # Skip moving within the same pile
 
             for i in range(len(source_pile.cards)):
                 selected_cards = source_pile.cards[i:]
+
+                # Ensure the selected cards are in valid order
+                if not self.is_valid_sequence(selected_cards):
+                    continue
+
+                # Check if the move is valid based on game rules
                 if source_pile.valid_transfer(target_pile, selected_cards, self.ranks):
-                    valid_moves.append((source_pile, target_pile))
+                    valid_moves.append((source_pile, target_pile, selected_cards))
 
     return valid_moves
 
@@ -294,9 +308,7 @@ def reconstruct_path(came_from, current):
         path.append(current)
         current = came_from[current]
     path.reverse()
-    for state in path:
-        state.display(game_display)
-        pygame.display.update()
-        print(state)  # Aqui poderia ser uma renderização do estado
+    
+    return path; # Aqui poderia ser uma renderização do estado
 
 start_menu()

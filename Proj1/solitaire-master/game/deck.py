@@ -12,7 +12,7 @@ class Deck:
     def __lt__(self, other):
         return id(self) < id(other)
     
-    
+
     def __init__(self, piles=[], card_images={}, card_size=(100, 150)):
         # cards list is only used when starting/restarting a game
         self.cards = []
@@ -219,7 +219,7 @@ class Deck:
 
     def display(self, game_display):
         for pile in self.piles:
-            if pile.pile_type == 'foundation' or pile.pile_type == 'deck' and len(pile.cards) == 0:
+            if pile.pile_type == 'foundation' and len(pile.cards) == 0:
                 pygame.draw.rect(game_display, self.empty_color, [pile.x, pile.y, pile.card_width, pile.card_height])
             if pile.pile_type == 'free-cell' and len(pile.cards) == 0:
                 pygame.draw.rect(game_display, self.empty_color2, [pile.x, pile.y, pile.card_width, pile.card_height])
@@ -242,6 +242,28 @@ class Deck:
         target_index = next(i for i, p in enumerate(self.piles) if p.pile_type == target_pile.pile_type and len(p.cards) == len(target_pile.cards))
 
         self.piles[source_index].transfer_cards(selected_cards, self.piles[target_index], self.ranks)
+
+    def is_valid_sequence(self, cards):
+        """
+        Checks if the given list of cards is in a valid order to be moved.
+        Example rules: Descending order, alternating colors.
+        """
+        if not cards or len(cards) == 1:
+            return True  # A single card is always valid
+
+        for i in range(len(cards) - 1):
+            card1, card2 = cards[i], cards[i + 1]
+
+            # Check descending order based on rank
+            if self.ranks.index(card1.rank) != self.ranks.index(card2.rank) + 1:
+                return False
+
+            # Check alternating colors (assuming card has 'color' attribute)
+            if card1.color == card2.color:
+                return False
+
+        return True
+
 
 class CompressedDeck:
     _ids = count(0)
