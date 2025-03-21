@@ -227,28 +227,27 @@ def a_star_solve(deck):
 
     while not open_set.empty():
         _, current_deck = open_set.get()
+        print(open_set.queue)
 
-        if (time.time() - start_time) > 10:
+        if (time.time() - start_time) > 5:
             print("Time limit reached")
-            return reconstruct_path(came_from, best_state)
+            return reconstruct_path(came_from, open_set.get()[1])
 
         # Skip if the state has already been visited
         if current_deck in visited_states:
             continue
         visited_states.add(current_deck)
 
-        print("Current state: {}".format(current_deck))
         # Display the current state of the dec
 
         if current_deck.check_for_win():
-            reconstruct_path(came_from, current_deck)
+            reconstruct_path(came_from, open_set.get()[1])
             return True
 
         for neighbor in get_valid_moves(current_deck):
             print(neighbor)
             neighbor_deck = current_deck.clone()
             neighbor_deck.make_move(neighbor)
-            print("Neighbor deck: {}".format(neighbor_deck))
             neighbor_state = neighbor_deck
 
             if neighbor_state in visited_states:
@@ -261,7 +260,6 @@ def a_star_solve(deck):
                 g_score[neighbor_state] = temp_g_score
                 f_score[neighbor_state] = temp_g_score + heuristic(neighbor_deck)
                 open_set.put((f_score[neighbor_state], neighbor_state))
-                best_state = neighbor_state
 
     return []  # Se não encontrar solução
 
