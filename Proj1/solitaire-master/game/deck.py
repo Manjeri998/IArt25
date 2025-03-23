@@ -187,6 +187,7 @@ class Deck:
         
         return piles_to_update, valid_move
     
+    
     def get_state(self):
         """
         Returns a hashable representation of the deck's state.
@@ -263,6 +264,22 @@ class Deck:
                 return False
 
         return True
+    
+    def can_move_to_foundation(self, card):
+        """
+        Checks if the given card can be moved to any foundation pile.
+        """
+        for pile in self.piles:
+            if pile.pile_type == "foundation":
+                # If the foundation pile is empty, only an Ace can be placed
+                if not pile.cards and card.rank == "ace":
+                    return True
+                # If the foundation pile has cards, check if the card can be placed on top
+                elif pile.cards:
+                    top_card = pile.cards[-1]
+                    if top_card.suit == card.suit and self.ranks.index(card.rank) == self.ranks.index(top_card.rank) + 1:
+                        return True
+        return False
 
 
 class CompressedDeck:
