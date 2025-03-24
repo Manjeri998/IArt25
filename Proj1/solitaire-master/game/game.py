@@ -2,6 +2,7 @@ import pygame
 from deck import Deck
 from utils.ui import Text, Button, RadioGroup, Radio, Checkbox
 from utils import settings_manager, history_manager
+from searchAlgorithms import ASTAR  # Import the ASTAR class
 import time
 from queue import PriorityQueue
 
@@ -110,7 +111,10 @@ def game_loop():
                             if button.action == "undo":
                                 deck = hm.undo(deck)
                             if button.action == "astar":
-                                a_star_states = a_star_solve(deck)
+                                astar_solver = ASTAR()
+                                score = [None] * 6 
+                                astar_solver.run(deck, score)
+                                print("A* Results:", score)
                                 print(a_star_states)
                             if button.action == "next":
                                 print(deck)
@@ -209,123 +213,3 @@ def start_menu():
 
         pygame.display.update()
         clock.tick(FPS)
-
-def a_star_solve(deck):
-    """
-    Resolve o jogo de Paciência usando o algoritmo A* e exibe o estado atual no jogo.
-    """
-    open_set = PriorityQueue()
-    initial_state = deck.clone()  # Clone para evitar modificações no original
-    open_set.put((0, initial_state))
-    
-    came_from = {}
-    g_score = {initial_state: 0}
-    f_score = {initial_state: heuristic(initial_state)}
-    
-    visited_states = set()
-    start_time = time.time()
-
-    while not open_set.empty():
-        _, current_deck = open_set.get()
-        print(current_deck)
-        print(g_score[current_deck])
-        print(f_score[current_deck])
-        # Se o estado já foi visitado, pule
-        if current_deck in visited_states:
-            continue
-        visited_states.add(current_deck)
-
-        if current_deck.check_for_win():
-            return reconstruct_path(came_from, current_deck)
-
-        for move in get_valid_moves(current_deck):
-            neighbor_state = current_deck.clone()
-            neighbor_state.make_move(move)
-
-            if neighbor_state in visited_states:
-                continue
-
-            temp_g_score = g_score[current_deck] + 1
-
-            if neighbor_state not in g_score or temp_g_score < g_score[neighbor_state]:
-                came_from[neighbor_state] = current_deck
-                g_score[neighbor_state] = temp_g_score
-                f_score[neighbor_state] = temp_g_score + heuristic(neighbor_state)
-                open_set.put((f_score[neighbor_state], neighbor_state))
-
-    return None 
-
-def heuristic(deck):
-    """
-    Heurística aprimorada para A* no FreeCell.
-
-    Considera:
-    - Cartas prontas para ir à fundação (benefício maior)
-    - Cartas bloqueadas (penalidade)
-    - Número de espaços livres (colunas e células)
-    - Penaliza o uso excessivo de células livres
-    """
-    h_score = 0
-
-    # 🏆 Benefício para cartas na fundação
-    for pile in deck.piles:
-        if pile.is_foundation():
-            h_score -= len(pile.cards) * 15  # Mais cartas na fundação = melhor
-
-    # 🔓 Penalizar cartas bloqueadas que deveriam ir para a fundação
-    for pile in deck.piles:
-        if pile.pile_type == "tableau":
-            for i, card in enumerate(pile.cards):
-                if deck.can_move_to_foundation(card):  
-                    h_score -= 10  # Recompensa por estar pronto para a fundação
-                    
-                    # Penalizar todas as cartas acima dela
-                    cards_above = pile.cards[i+1:]  
-                    h_score += len(cards_above) * 3  # Penaliza cada carta acima
-
-    # 🏗️ Benefício por colunas vazias
-    empty_columns = sum(1 for pile in deck.piles if pile.pile_type == "tableau" and len(pile.cards) == 0)
-    h_score -= empty_columns * 4  # Mais colunas vazias = melhor
-
-    # 🚧 Penalizar células livres ocupadas
-    free_cells_used = sum(1 for pile in deck.piles if pile.pile_type == "freecell" and len(pile.cards) > 0)
-    h_score += free_cells_used * 3  # Evitar sobrecarregar células livres
-
-    return h_score
-
-def get_valid_moves(self):
-    """
-    Returns a list of valid moves as tuples (source_pile, target_pile, selected_card).
-    Ensures the base card is moved individually and the move is valid.
-    """
-    valid_moves = []
-
-    for source_pile in self.piles:
-        if not source_pile.cards:
-            continue  # Skip empty piles
-
-        base_card = source_pile.cards[-1]  # Only consider the topmost card
-
-        for target_pile in self.piles:
-            if source_pile == target_pile:
-                continue  # Skip moving within the same pile
-
-            # Check if moving the base card is valid
-            if source_pile.valid_transfer(target_pile, [base_card], self.ranks):
-                valid_moves.append((source_pile, target_pile, [base_card]))
-
-    return valid_moves
-
-def reconstruct_path(came_from, current):
-    """
-    Reconstrói e imprime o caminho da solução.
-    """
-    path = []
-    while current in came_from:
-        path.append(current)
-        current = came_from[current]
-    path.reverse()
-    
-    return path; # Aqui poderia ser uma renderização do estado
-
-start_menu()
