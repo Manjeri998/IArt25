@@ -270,6 +270,24 @@ class Deck:
                     if top_card.suit == card.suit and self.ranks.index(card.rank) == self.ranks.index(top_card.rank) + 1:
                         return True
         return False
+    
+    def find_card(self, card):
+        """
+        Finds the pile index in the deck and the card index within the pile.
+
+        Args:
+            card (Card): The card to search for.
+
+        Returns:
+            tuple: A tuple containing the pile index in the deck and the card index within the pile.
+                Returns (None, None) if the card is not found.
+        """
+        for pile_index, pile in enumerate(self.piles):
+            for card_index, pile_card in enumerate(pile.cards):
+                if pile_card == card:  
+                    return pile_index, card_index
+        return None, None
+
 
 
 class CompressedDeck:
