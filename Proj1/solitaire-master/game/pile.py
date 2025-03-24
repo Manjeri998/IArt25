@@ -1,5 +1,5 @@
 from collections import namedtuple
-import settings_manager
+from utils import settings_manager
 
 
 class Pile:
@@ -102,35 +102,6 @@ class Pile:
                 if card_clicked and card.face_up:
                     selection = True
                     selected_cards = self.cards[index:]
-
-        if self.pile_type == 'stock':
-            deselect_pile = True
-
-            # find the wastepile
-            wastepile = None
-            for pile in piles:
-                if pile.pile_type == 'waste':
-                    wastepile = pile
-                    break
-
-            if len(self.cards) != 0:
-                if self.draw_three == True:
-                    if len(self.cards) >= 3:
-                        index_range = 3
-                    elif len(self.cards) == 2:
-                        index_range = 2
-                    else:
-                        index_range = 1
-
-                    for _ in range(index_range):
-                        wastepile.cards.append(self.cards[-1])
-                        del self.cards[-1]
-                else:
-                    wastepile.cards.append(self.cards[-1])
-                    del self.cards[-1]
-            else:
-                self.cards = wastepile.cards[::-1]
-                wastepile.cards = []
 
         return selection, selected_cards, deselect_pile
 

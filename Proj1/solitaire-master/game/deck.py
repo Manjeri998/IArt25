@@ -53,12 +53,22 @@ class Deck:
         return pygame.transform.scale(self.card_back_image, self.card_size)
 
     def clone(self):
+        """
+        Creates a deep copy of the current deck, ensuring that cards are properly cloned.
+        """
+        new_piles = deepcopy(self.piles)  # Deep copy piles
+
+        # Ensure each card in each pile is a new instance
+        for pile in new_piles:
+            pile.cards = [Card(card.name_of_image, card.card_size, card.rank, card.suit, card.face_up) for card in pile.cards]
+
         new_deck = Deck(
-            piles=deepcopy(self.piles),
-            card_size=self.card_size      
+            piles=new_piles,
+            card_images=self.card_images,  # Pass the existing card images
+            card_size=self.card_size
         )
         return new_deck
-
+    
     def resize_card_images(self):
         for name_of_image, card_image in self.card_images.items():
             self.card_images[name_of_image] = pygame.transform.scale(card_image, self.card_size)
@@ -186,26 +196,6 @@ class Deck:
             self.deselect()
         
         return piles_to_update, valid_move
-    
-    
-    def get_state(self):
-        """
-        Returns a hashable representation of the deck's state.
-        The state is divided into foundations, tableau, and free cells.
-        """
-        foundations = tuple(
-            tuple(card.name_of_image for card in pile.cards)
-            for pile in self.piles if pile.pile_type == "foundation"
-        )
-        tableau = tuple(
-            tuple(card.name_of_image for card in pile.cards)
-            for pile in self.piles if pile.pile_type == "tableau"
-        )
-        free_cells = tuple(
-            tuple(card.name_of_image for card in pile.cards)
-            for pile in self.piles if pile.pile_type == "free-cell"
-        )
-        return (foundations, tableau, free_cells)
 
     def handle_right_click(self, mouse_position):
         self.deselect()

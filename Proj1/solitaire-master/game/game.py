@@ -1,7 +1,7 @@
 import pygame
 from deck import Deck
-from ui import Text, Button, RadioGroup, Radio, Checkbox
-import settings_manager, history_manager
+from utils.ui import Text, Button, RadioGroup, Radio, Checkbox
+from utils import settings_manager, history_manager
 import time
 from queue import PriorityQueue
 
@@ -235,7 +235,6 @@ def a_star_solve(deck):
             continue
         visited_states.add(current_deck)
 
-        # Se venceu, retorna o caminho
         if current_deck.check_for_win():
             return reconstruct_path(came_from, current_deck)
 
@@ -254,7 +253,7 @@ def a_star_solve(deck):
                 f_score[neighbor_state] = temp_g_score + heuristic(neighbor_state)
                 open_set.put((f_score[neighbor_state], neighbor_state))
 
-    return None  # Melhor do que []
+    return None 
 
 def heuristic(deck):
     """
