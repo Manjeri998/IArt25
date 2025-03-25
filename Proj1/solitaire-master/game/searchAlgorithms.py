@@ -23,7 +23,7 @@ class SearchAlgorithm:
     
     def move(self, deck, move):
         source_pile, target_pile, selected_cards = move
-        new_deck = deepcopy(deck)
+        new_deck = deck.clone()
         new_deck.transfer_cards(selected_cards, new_deck.piles[source_pile], new_deck.piles[target_pile])
         return new_deck
     
@@ -77,7 +77,9 @@ class ASTAR(SearchAlgorithm):
                 print("Move:")
                 print(move)
                 new_deck = deck.clone()
-                new_deck.make_move(move)
+                print(new_deck)
+                new_deck = self.move(new_deck, move)
+                print(new_deck)
                 child_states.append(new_deck)
             return child_states
 
@@ -144,7 +146,6 @@ class ASTAR(SearchAlgorithm):
         while len(stack):
 
             node, _ = stack.pop()  # get first element in the queue
-            print(f"Exploring node with state:\n{node.state}") 
             #print("nó com valor", v)
             if goal_state_func(node.state):  # check goal state
                 return node
@@ -166,9 +167,6 @@ class ASTAR(SearchAlgorithm):
                 # enqueue the child node
                 stack.append((child_tree, value))
 
-                print(f"  Child state added with heuristic {value}:\n{child}")
-            
-            print("\nCurrent graph structure:")
             self.print_graph(root)
             stack = sorted(stack, key = lambda node: node[1], reverse=True)
 
@@ -207,7 +205,7 @@ class ASTAR(SearchAlgorithm):
         h_score -= empty_columns * 4  # Mais colunas vazias = melhor
 
         # 🚧 Penalizar células livres ocupadas
-        free_cells_used = sum(1 for pile in deck.piles if pile.pile_type == "freecell" and len(pile.cards) > 0)
+        free_cells_used = sum(1 for pile in deck.piles if pile.pile_type == "free-cell" and len(pile.cards) > 0)
         h_score += free_cells_used * 3  # Evitar sobrecarregar células livres
 
         return h_score
@@ -218,23 +216,33 @@ class ASTAR(SearchAlgorithm):
         Ensures the base card is moved individually and the move is valid.
         """
         valid_moves = []
-        moved_to_free_cell = set()
+
+        free_moves = False
 
         for source_pile in deck.piles:
             if not source_pile.cards:
                 continue  # Skip empty piles
 
             base_card = source_pile.cards[-1]  # Only consider the topmost card
-
+            free_moves = False
             for target_pile in deck.piles:
                 if source_pile == target_pile:
                     continue  # Skip moving within the same pile
 
                 # Check if moving the base card is valid
                 if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
-                    valid_moves.append((source_pile, target_pile, [base_card]))
+                    if target_pile.pile_type == "free-cell":
+                        if free_moves:
+                            continue
+                        else:
+                            valid_moves.append((source_pile, target_pile, [base_card]))
+                            free_moves = True
+                    else: 
+                        valid_moves.append((source_pile, target_pile, [base_card]))
+                    
 
         return valid_moves
+    
     
     def print_graph(self, root):
         """
