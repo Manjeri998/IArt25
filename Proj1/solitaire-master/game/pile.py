@@ -132,34 +132,42 @@ class Pile:
 
         if pile_to_transfer_to.pile_type == 'free-cell':
             if bottom_card is not None:
-                valid = False
+                return False
             else:
                 if len(selected_cards) > 1:
-                    valid = False
+                    return False
+            return True
+        
+        if pile_to_transfer_to.pile_type == 'foundation':
+            if len(selected_cards) > 1:
+                return False
+            if len(pile_to_transfer_to.cards) == 0:
+                # The foundation pile is empty, only an Ace can be placed
+                if top_card.rank != 'ace':
+                    return False
+            else:
+                # The foundation pile has cards, check if the card can be placed on top
+                top_foundation_card = pile_to_transfer_to.cards[-1]
+                if top_card.suit != top_foundation_card.suit:
+                    return False  # The suit must match
+                if ranks.index(top_card.rank) != ranks.index(top_foundation_card.rank) + 1:
+                    return False 
+            return True
 
         # if a pile is empty only certain cards can be placed there
         if bottom_card is None :
             if pile_to_transfer_to.pile_type == 'tableau':
                 valid = True
-            elif pile_to_transfer_to.order.foundation is not None:
-                if top_card.rank != pile_to_transfer_to.order.foundation:
-                    valid = False
         else:
             # cards must be ordered depending on the pile they are in
-            if pile_to_transfer_to.order.rank is not None:
                 rank_index = ranks.index(bottom_card.rank)
                 target_index = rank_index + pile_to_transfer_to.order.rank
                 if target_index < 0 or target_index >= len(ranks):
                     valid = False
                 elif top_card.rank != ranks[target_index]:
                     valid = False
-            if pile_to_transfer_to.order.color_suit is not None:
-                if pile_to_transfer_to.order.color_suit == 'alt-color':
-                    if top_card.color == bottom_card.color:
-                        valid = False
-                elif pile_to_transfer_to.order.color_suit == 'same-suit':
-                    if top_card.suit != bottom_card.suit:
-                        valid = False
+                if top_card.color == bottom_card.color:
+                    valid = False
 
         return valid
     

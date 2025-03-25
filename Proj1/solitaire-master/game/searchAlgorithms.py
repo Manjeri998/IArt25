@@ -22,9 +22,31 @@ class SearchAlgorithm:
         self.tree_nodes = []
     
     def move(self, deck, move):
-        source_pile, target_pile, selected_cards = move
+        """
+        Applies a move to the given deck by transferring a card from the source pile to the target pile.
+
+        Args:
+            deck (Deck): The current state of the game.
+            move (tuple): A tuple representing the move in the format (source_pile_index, target_pile_index, selected_cards).
+
+        Returns:
+            Deck: The updated deck after applying the move.
+        """
+        source_pile_index, target_pile_index, selected_cards = move
+
+        # Get the source and target piles
+        source_pile = deck.piles[source_pile_index]
+        target_pile = deck.piles[target_pile_index]
+
+        # Transfer the selected cards from the source pile to the target pile
+        for card in selected_cards:
+            source_pile.cards.pop()# Remove the card from the source pile
+            target_pile.cards.append(card)  # Add the card to the target pile
+        
         new_deck = deck.clone()
-        new_deck.transfer_cards(selected_cards, new_deck.piles[source_pile], new_deck.piles[target_pile])
+        new_deck.piles[source_pile_index] = source_pile
+        new_deck.piles[target_pile_index] = target_pile
+
         return new_deck
     
 
@@ -218,27 +240,35 @@ class ASTAR(SearchAlgorithm):
         valid_moves = []
 
         free_moves = False
-
+        x = 0
         for source_pile in deck.piles:
             if not source_pile.cards:
+                x += 1
                 continue  # Skip empty piles
 
             base_card = source_pile.cards[-1]  # Only consider the topmost card
             free_moves = False
+            y = 0
             for target_pile in deck.piles:
-                if source_pile == target_pile:
+                print(y)
+                if x == y:
+                    y += 1
                     continue  # Skip moving within the same pile
 
                 # Check if moving the base card is valid
                 if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
                     if target_pile.pile_type == "free-cell":
                         if free_moves:
+                            y+=1
                             continue
                         else:
-                            valid_moves.append((source_pile, target_pile, [base_card]))
+                            valid_moves.append((x, y, [base_card]))
                             free_moves = True
                     else: 
-                        valid_moves.append((source_pile, target_pile, [base_card]))
+                        valid_moves.append((x, y, [base_card]))
+                    
+                y += 1
+            x += 1
                     
 
         return valid_moves
