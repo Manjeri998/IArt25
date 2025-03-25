@@ -71,59 +71,81 @@ def win_screen():
         clock.tick(FPS)
 
 def game_loop():
+    print("Game loop started")  # Debugging start of the game loop
     undo_button = Button(display_dimensions, "Undo", (10, 10), (30, 30), grey, centered=False, text_size=11, action="undo")
     pause_button = Button(display_dimensions, "Pause", (display_dimensions[0]-50, 10), (40, 30), grey, centered=False, text_size=10, action="pause")
     astar_button = Button(display_dimensions, "A*", (10, 60), (30, 30), grey, centered=False, text_size=10, action="astar")
     next_button = Button(display_dimensions, "Next", (10, 110), (30, 30), grey, centered=False, text_size=10, action="next")
-    buttons = [undo_button, pause_button, astar_button, next_button ]
+    buttons = [undo_button, pause_button, astar_button, next_button]
     a_star_states = []
 
     deck = Deck()
+    print("Deck initialized")  # Debugging deck initialization
     deck.load_cards()
+    print("Cards loaded into deck")  # Debugging card loading
     deck.shuffle_cards()
+    print("Deck shuffled")  # Debugging deck shuffle
     deck.load_piles(display_dimensions)
+    print("Piles loaded")  # Debugging pile loading
 
     hm = history_manager.HistoryManager(deck)
+    print("History manager initialized")  # Debugging history manager initialization
 
     while True:
+        print("Game loop iteration started")  # Debugging start of each game loop iteration
         if deck.check_for_win():
+            print("Win condition met")  # Debugging win condition
             win_screen()
 
         for event in pygame.event.get():
+            print(f"Event detected: {event}")  # Debugging events
             if event.type == pygame.QUIT:
+                print("Quit event detected")  # Debugging quit event
                 quit_game()
             if event.type == pygame.KEYDOWN:
+                print(f"Key pressed: {event.key}")  # Debugging key press
                 if event.key == pygame.K_r:
+                    print("Restarting game loop")  # Debugging restart
                     game_loop()
                 elif event.key == pygame.K_w:
+                    print("Win screen triggered")  # Debugging win screen
                     win_screen()
             if event.type == pygame.MOUSEBUTTONDOWN:
+                print(f"Mouse button clicked: {event.button}")  # Debugging mouse click
                 mouse_pos = pygame.mouse.get_pos()
                 if event.button == 1:
+                    print(f"Left mouse button clicked at {mouse_pos}")  # Debugging left click
                     piles_to_update, valid_move = deck.handle_click(mouse_pos)
-                    print(piles_to_update)
+                    print(f"Piles to update: {piles_to_update}, Valid move: {valid_move}")  # Debugging pile updates
                     deck.update(piles_to_update, display_dimensions[1])
                     if valid_move:
+                        print("Valid move made")  # Debugging valid move
                         hm.valid_move_made(deck)
 
                     for button in buttons:
                         if button.check_if_clicked(mouse_pos):
+                            print(f"Button clicked: {button.action}")  # Debugging button click
                             if button.action == "undo":
+                                print("Undo action triggered")  # Debugging undo
                                 deck = hm.undo(deck)
                             if button.action == "astar":
+                                print("A* algorithm triggered")  # Debugging A* algorithm
                                 astar_solver = ASTAR()
-                                score = [None] * 6 
+                                score = [None] * 6
                                 astar_solver.run(deck, score)
                                 print("A* Results:", score)
-                                print(a_star_states)
+                                print("A* States:", a_star_states)
                             if button.action == "next":
+                                print("Next action triggered")  # Debugging next action
                                 print(deck)
                                 deck = a_star_states.pop(0)
 
                 if event.button == 3:
+                    print(f"Right mouse button clicked at {mouse_pos}")  # Debugging right click
                     deck.handle_right_click(mouse_pos)
 
         game_display.fill(blue)
+        print("Game display updated")  # Debugging display update
 
         for button in buttons:
             button.display(game_display, pygame.mouse.get_pos())
@@ -131,7 +153,7 @@ def game_loop():
         deck.display(game_display)
         pygame.display.update()
         clock.tick(FPS)
-
+        print("End of game loop iteration")  # Debugging end of game loop iteration
 
 def options_menu():
     settings = settings_manager.load_settings()
@@ -213,3 +235,5 @@ def start_menu():
 
         pygame.display.update()
         clock.tick(FPS)
+
+start_menu()

@@ -106,6 +106,9 @@ class Pile:
         return selection, selected_cards, deselect_pile
 
     def valid_transfer(self, pile_to_transfer_to, selected_cards, ranks):
+        if not self.is_valid_moving_pile(selected_cards, ranks):
+            return False
+        
         if len(pile_to_transfer_to.cards) != 0:
             bottom_card = pile_to_transfer_to.cards[-1]
         else:
@@ -113,10 +116,6 @@ class Pile:
         top_card = selected_cards[0]
 
         valid = True
-
-        # cannot transfer to the deck
-        if pile_to_transfer_to.pile_type == 'stock' or pile_to_transfer_to.pile_type == 'waste':
-            valid = False
 
         if pile_to_transfer_to.pile_type == 'free-cell':
             if bottom_card is not None:
@@ -126,8 +125,10 @@ class Pile:
                     valid = False
 
         # if a pile is empty only certain cards can be placed there
-        if bottom_card is None:
-            if pile_to_transfer_to.order.foundation is not None:
+        if bottom_card is None :
+            if pile_to_transfer_to.pile_type == 'foundation':
+                valid = True
+            elif pile_to_transfer_to.order.foundation is not None:
                 if top_card.rank != pile_to_transfer_to.order.foundation:
                     valid = False
         else:
@@ -148,6 +149,35 @@ class Pile:
                         valid = False
 
         return valid
+    
+    def is_valid_moving_pile(self, cards, ranks):
+        """
+        Checks if the given list of cards forms a valid moving pile.
+
+        Args:
+            cards (list): A list of Card objects to validate.
+            ranks (list): A list of card ranks in order (e.g., ['ace', '2', ..., 'king']).
+
+        Returns:
+            bool: True if the cards form a valid moving pile, False otherwise.
+        """
+        
+        if self.cards[-len(cards):] != cards:
+            return False
+
+        for i in range(len(cards) - 1):
+            card1, card2 = cards[i], cards[i + 1]
+
+            # Check descending order based on rank
+            if ranks.index(card1.rank) != ranks.index(card2.rank) + 1:
+                return False
+
+            # Check alternating colors (assuming card has 'color' attribute)
+            if card1.color == card2.color:
+                return False
+
+        return True
+
 
     def transfer_cards(self, selected_cards, pile_to_transfer_to, ranks):
         if self.valid_transfer(pile_to_transfer_to, selected_cards, ranks):
