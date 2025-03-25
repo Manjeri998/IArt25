@@ -36,6 +36,19 @@ class Pile:
         self.y = y
 
         self.update()
+
+    def __str__(self):
+        """
+        Returns a string representation of the pile, including its type and cards.
+        """
+        card_list = ', '.join([f"{card.rank} of {card.suit}" for card in self.cards])
+        return f"Pile(type={self.pile_type}, cards=[{card_list}])"
+
+    def __repr__(self):
+        """
+        Returns a detailed string representation of the pile for debugging.
+        """
+        return self.__str__()
     
     def __len__(self):
         return len(self.cards)
@@ -126,7 +139,7 @@ class Pile:
 
         # if a pile is empty only certain cards can be placed there
         if bottom_card is None :
-            if pile_to_transfer_to.pile_type == 'foundation':
+            if pile_to_transfer_to.pile_type == 'tableau':
                 valid = True
             elif pile_to_transfer_to.order.foundation is not None:
                 if top_card.rank != pile_to_transfer_to.order.foundation:

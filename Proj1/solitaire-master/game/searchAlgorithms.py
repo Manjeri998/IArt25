@@ -34,18 +34,11 @@ class SearchAlgorithm:
         return new_states
 
     def win(self, board):
-        return self.get_number_clusters(board) == self.get_number_colors(board)
-
-    def get_steps(self, solution : TreeNode):
-        steps_counter = -1
-        steps = []
-        while solution:
-            steps.append(solution.state)
-            steps_counter += 1
-            solution = solution.parent
-        steps.reverse()
-
-        return steps_counter, steps
+        foundation_piles = [pile for pile in board.piles if pile.pile_type == "foundation"]
+        for pile in foundation_piles:
+            if len(pile.cards) != 13:  # Each foundation pile must have 13 cards
+                return False
+        return True
 
     def depth(self, node) -> int:
         depth = 0
@@ -56,48 +49,66 @@ class SearchAlgorithm:
     
     def timed_out(self, before) -> bool:
         return time() - before > 60
-
-    def search_heuristic_1(self, board):
-        return self.get_number_clusters(board) - self.get_number_colors(board)
-    
-    def search_heuristic_2(self, board):
-        clusters = []
-        for (i, j) in [(i, j) for i in range(len(board)) for j in range(len(board))]:
-            cluster = self.get_cluster(board, [i, j])
-            if cluster == []:
-                continue
-            if (cluster, board[i][j]) not in clusters:
-                clusters.append((cluster, board[i][j]))
-
-        total = 0
-        for i1 in range(0, len(clusters)-1):
-            for i2 in range(i1+1, len(clusters)):
-                (cluster1, color1), (cluster2, color2) = clusters[i1], clusters[i2]
-                if color1 == color2:
-                    total += self.get_distance(cluster1, cluster2)
-
-        return total
-
-    def search_heuristic_3(self, board):
-        return self.a_star_search_heuristic1(board) * len(board)
     
 class ASTAR(SearchAlgorithm):
     def __init__(self):
         super().__init__()
     
-    def run(self, board : list, score : list) -> None: # The result is stored in the score list
-        self.before = time()
-        score[0] = "*"
-        score[1] = "*"
-        nodes = self.a_star_search(board, self.win, self.child_states, self.search_heuristic_2)
-        if nodes is None:
-            score[0] = "N/A"
-            score[1] = "N/A"
-        else:
-            self.tree_nodes = nodes
-            score[0] = round(time() - self.before, 2) # Time
-            score[1], score[3] = self.get_steps(nodes) # Moves and Board states for each move
-            score[5] = True # Solved
+    def run(self, board, score):
+        """
+        Solves the game using the A* algorithm and stores the solution path in the score list.
+
+        Args:
+            board (Deck): The initial state of the game.
+            score (list): A list to store the solution path and other results.
+        """
+        print("Starting A* algorithm...")  # Debugging start of A*
+        start_time = time()
+
+        # Define the goal state function
+        def goal_state_func(deck):
+            return deck.check_for_win()
+
+        # Define the operators function (generates child states)
+        def operators_func(deck):
+            valid_moves = self.get_valid_moves(deck)
+            child_states = []
+            for move in valid_moves:
+                print("Move:")
+                print(move)
+                new_deck = deck.clone()
+                new_deck.make_move(move)
+                child_states.append(new_deck)
+            return child_states
+
+        # Run the A* search
+        solution_node = self.a_star_search(
+            initial_state=board,
+            goal_state_func=goal_state_func,
+            operators_func=operators_func,
+            heuristic_func=self.heuristic
+        )
+
+        if solution_node is None:
+            print("No solution found within the time limit.")
+            score[0] = None  # No solution
+            score[1] = time() - start_time  # Time taken
+            return
+
+        # Reconstruct the solution path
+        solution_path = []
+        current_node = solution_node
+        while current_node is not None:
+            solution_path.append(current_node.state)
+            current_node = current_node.parent
+        solution_path.reverse()  # Reverse to get the path from start to goal
+
+        # Store the results in the score list
+        score[0] = solution_path  # Solution path
+        score[1] = time() - start_time  # Time taken
+        score[2] = len(solution_path) - 1  # Number of moves
+        print(f"Solution found in {score[1]:.2f} seconds with {score[2]} moves.")
+    
             
     def shortest_path(self, initial_coordinate, cluster):
         visited = set()
@@ -127,11 +138,13 @@ class ASTAR(SearchAlgorithm):
         stack = [(root, heuristic_func(initial_state))]  # initialize the queue to store the nodes
         filtered_states = [initial_state]
 
+        print("Starting A* search...")  # Debugging start of A*
+        print(f"Initial state heuristic: {heuristic_func(initial_state)}")
+
         while len(stack):
 
-            if self.timed_out(self.before): return None
-
             node, _ = stack.pop()  # get first element in the queue
+            print(f"Exploring node with state:\n{node.state}") 
             #print("nó com valor", v)
             if goal_state_func(node.state):  # check goal state
                 return node
@@ -152,7 +165,11 @@ class ASTAR(SearchAlgorithm):
 
                 # enqueue the child node
                 stack.append((child_tree, value))
+
+                print(f"  Child state added with heuristic {value}:\n{child}")
             
+            print("\nCurrent graph structure:")
+            self.print_graph(root)
             stack = sorted(stack, key = lambda node: node[1], reverse=True)
 
         return None
@@ -195,6 +212,45 @@ class ASTAR(SearchAlgorithm):
 
         return h_score
     
+    def get_valid_moves(self, deck):
+        """
+        Returns a list of valid moves as tuples (source_pile, target_pile, selected_card).
+        Ensures the base card is moved individually and the move is valid.
+        """
+        valid_moves = []
+        moved_to_free_cell = set()
+
+        for source_pile in deck.piles:
+            if not source_pile.cards:
+                continue  # Skip empty piles
+
+            base_card = source_pile.cards[-1]  # Only consider the topmost card
+
+            for target_pile in deck.piles:
+                if source_pile == target_pile:
+                    continue  # Skip moving within the same pile
+
+                # Check if moving the base card is valid
+                if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
+                    valid_moves.append((source_pile, target_pile, [base_card]))
+
+        return valid_moves
+    
+    def print_graph(self, root):
+        """
+        Prints the graph structure for debugging.
+
+        Args:
+            root (TreeNode): The root node of the graph.
+        """
+        def traverse(node, depth=0):
+            print("  " * depth + f"Node (State): {node.state}")
+            for child in node.children:
+                traverse(child, depth + 1)
+
+        print("Graph:")
+        traverse(root)
+    '''
     def a_star_solve(self, deck):
         """
         Resolve o jogo de Paciência usando o algoritmo A* e exibe o estado atual no jogo.
@@ -239,29 +295,6 @@ class ASTAR(SearchAlgorithm):
                     open_set.put((f_score[neighbor_state], neighbor_state))
 
         return None 
-    
-    def get_valid_moves(self, deck):
-        """
-        Returns a list of valid moves as tuples (source_pile, target_pile, selected_card).
-        Ensures the base card is moved individually and the move is valid.
-        """
-        valid_moves = []
-
-        for source_pile in self.piles:
-            if not source_pile.cards:
-                continue  # Skip empty piles
-
-            base_card = source_pile.cards[-1]  # Only consider the topmost card
-
-            for target_pile in self.piles:
-                if source_pile == target_pile:
-                    continue  # Skip moving within the same pile
-
-                # Check if moving the base card is valid
-                if source_pile.valid_transfer(target_pile, [base_card], self.ranks):
-                    valid_moves.append((source_pile, target_pile, [base_card]))
-
-        return valid_moves
 
     def reconstruct_path(slcame_from, current):
         """
@@ -270,4 +303,5 @@ class ASTAR(SearchAlgorithm):
         path = []
         
         return path; # Aqui poderia ser uma renderização do estado
+    '''
 
