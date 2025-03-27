@@ -34,6 +34,9 @@ class Deck:
         self.card_images = card_images
         self.card_size = card_size
 
+        self.load_card_images()
+        self.resize_card_images()
+        
         name_of_image = os.path.join('resources', 'card_back.png')
         self.card_back_image = pygame.image.load(name_of_image)
         self.card_back = self.resize_card_back()
@@ -51,6 +54,18 @@ class Deck:
 
     def resize_card_back(self):
         return pygame.transform.scale(self.card_back_image, self.card_size)
+    
+    def load_card_images(self):
+        """
+        Loads all card images into the card_images dictionary.
+        """
+        for suit in self.suits:
+            for rank in self.ranks:
+                image_path = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
+                try:
+                    self.card_images[image_path] = pygame.image.load(image_path)
+                except FileNotFoundError:
+                    print(f"Warning: Card image not found: {image_path}")
 
     def clone(self):
         """
@@ -143,7 +158,79 @@ class Deck:
         
         return valid_moves
 
+    
+    @classmethod
+    def load_deck_from_file(cls, file_path, card_size=(100, 150), display_size=(1100, 800)):
+        """
+        Reads a file and creates a Deck object with 8 tableau piles, 4 free-cell piles, and 4 foundation piles.
+        All piles are initialized as empty and then filled according to the file.
 
+        Args:
+            file_path (str): The path to the file describing the deck.
+            card_size (tuple): The size of the cards (width, height).
+            display_size (tuple): The size of the display (width, height).
+
+        Returns:
+            Deck: A Deck object initialized based on the file's contents.
+        """
+        piles = []
+        suits = ['clubs', 'diamonds', 'hearts', 'spades']
+        ranks = ['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king']
+
+        display_width, display_height = display_size
+        pile_spacing = 25
+
+        start_x = 50
+        start_y = card_size[1] + 100
+
+        foundation_x_step = card_size[0] + pile_spacing
+        foundation_start_x = 50
+
+        # Create empty piles
+        for i in range(8):  # 8 tableau piles
+            piles.append(Pile([], start_x + i * (card_size[0] + pile_spacing), start_y, card_size, pile_type="tableau"))
+
+        for i in range(4):  # 4 free-cell piles
+            piles.append(Pile([], foundation_start_x + i * foundation_x_step, pile_spacing, card_size, pile_type="free-cell"))
+
+        for i in range(4):  # 4 foundation piles
+            piles.append(Pile([], foundation_start_x + (i + 4) * foundation_x_step, pile_spacing, card_size, pile_type="foundation"))
+
+        # Read the file and fill the piles
+        with open(file_path, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if not line:
+                    continue  # Skip empty lines
+
+                pile_type, *cards = line.split(';')
+                pile_cards = []
+
+                for card_str in cards:
+                    rank, suit = card_str.split('_of_')
+                    if rank in ranks and suit in suits:
+                        name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
+                        pile_cards.append(Card(name_of_image, card_size, rank, suit, face_up=True))
+
+                # Assign cards to the appropriate pile
+                if pile_type == "tableau":
+                    for pile in piles:
+                        if pile.pile_type == "tableau" and len(pile.cards) == 0:
+                            pile.cards = pile_cards
+                            break
+                elif pile_type == "free-cell":
+                    for pile in piles:
+                        if pile.pile_type == "free-cell" and len(pile.cards) == 0:
+                            pile.cards = pile_cards
+                            break
+                elif pile_type == "foundation":
+                    for pile in piles:
+                        if pile.pile_type == "foundation" and len(pile.cards) == 0:
+                            pile.cards = pile_cards
+                            break
+
+        # Return the deck with the initialized piles
+        return cls(piles=piles, card_size=card_size)
 
     def deselect(self):
         self.selection = False

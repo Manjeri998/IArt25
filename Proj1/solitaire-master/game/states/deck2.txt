@@ -1,0 +1,7 @@
+tableau;2_of_hearts;3_of_hearts;4_of_hearts  
+tableau;5_of_hearts;6_of_hearts  
+tableau;2_of_spades;3_of_spades  
+foundation;ace_of_hearts  
+foundation;ace_of_spades  
+free-cell;7_of_hearts  
+free-cell;4_of_spades  

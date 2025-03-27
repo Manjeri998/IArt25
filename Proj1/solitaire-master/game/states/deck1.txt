@@ -1,0 +1,6 @@
+tableau;ace_of_spades;2_of_hearts;3_of_clubs
+tableau;4_of_diamonds;5_of_spades
+foundation;ace_of_hearts
+free-cell
+free-cell
+foundation
