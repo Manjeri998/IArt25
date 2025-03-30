@@ -4,6 +4,7 @@ from utils.ui import Text, Button, RadioGroup, Radio, Checkbox
 from utils import settings_manager, history_manager
 from searchAlgorithms import ASTAR  # Import the ASTAR class
 import time
+import os
 from queue import PriorityQueue
 
 
@@ -13,10 +14,6 @@ green = (0, 200, 0)
 blue = (50, 50, 190)
 red = (190, 50, 50)
 grey = (100, 100, 100)
-
-al_deck = Deck()
-
-is_a_star = False
 
 display_dimensions = (1100, 800)
 
@@ -71,25 +68,21 @@ def win_screen():
         clock.tick(FPS)
 
 def game_loop():
-    print("Game loop started")  # Debugging start of the game loop
     undo_button = Button(display_dimensions, "Undo", (10, 10), (30, 30), grey, centered=False, text_size=11, action="undo")
     pause_button = Button(display_dimensions, "Pause", (display_dimensions[0]-50, 10), (40, 30), grey, centered=False, text_size=10, action="pause")
     astar_button = Button(display_dimensions, "A*", (10, 60), (30, 30), grey, centered=False, text_size=10, action="astar")
     next_button = Button(display_dimensions, "Next", (10, 110), (30, 30), grey, centered=False, text_size=10, action="next")
-    buttons = [undo_button, pause_button, astar_button, next_button]
+    load_state_button = Button(display_dimensions, "Load State", (10, 180), (100, 30), grey, centered=False, text_size=10, action="load_state")
+    new_deck_button = Button(display_dimensions, "New Deck", (10, 230), (100, 30), grey, centered=False, text_size=10, action="new_deck")
+    save_state_button = Button(display_dimensions, "Save State", (10, 280), (100, 30), grey, centered=False, text_size=10, action="save_state")
+    buttons = [undo_button, pause_button, astar_button, next_button, load_state_button, new_deck_button, save_state_button]
     a_star_states = []
 
     deck = Deck()
     deck = Deck.load_deck_from_file("states/deck2.txt")
     deck.update(None, display_dimensions[1])
-    print(deck)
-    print("Deck initialized")  # Debugging deck initialization
-    print("Cards loaded into deck")  # Debugging card loading
-    print("Deck shuffled")  # Debugging deck shuffle
-    print("Piles loaded")  # Debugging pile loading
 
     hm = history_manager.HistoryManager(deck)
-    print("History manager initialized")  # Debugging history manager initialization
 
     while True:
         if deck.check_for_win():
@@ -120,8 +113,19 @@ def game_loop():
                                 score = [None] * 6
                                 astar_solver.run(deck, score)
                             if button.action == "next":
-                                print(deck)
                                 deck = a_star_states.pop(0)
+                            if button.action == "load_state": 
+                                deck = Deck.load_deck_from_file("states/deck1.txt")
+                                deck.update(None, display_dimensions[1])
+                            if button.action == "new_deck":
+                                deck = Deck() 
+                                deck.add_all_cards()
+                                deck.shuffle_cards()
+                                deck.load_piles(display_dimensions)
+                                deck.update(None, display_dimensions[1])
+                                hm = history_manager.HistoryManager(deck) 
+                            if button.action == "save_state":
+                                save_deck_to_file(deck)
 
                 if event.button == 3:
                     deck.handle_right_click(mouse_pos)
@@ -186,6 +190,7 @@ def start_menu():
     quit_button = Button(display_dimensions, "Quit", (200, 0), (100, 50), red, text_color=white, action="quit")
     options_button = Button(display_dimensions, "Options", (-200, 0), (100, 50), grey, text_color=white, action="options")
     buttons = [play_button, quit_button, options_button]
+    
 
     while True:
         for event in pygame.event.get():
@@ -215,5 +220,26 @@ def start_menu():
 
         pygame.display.update()
         clock.tick(FPS)
+
+def save_deck_to_file(deck):
+    """
+    Saves the current state of the deck to a new file in the 'states' folder.
+    """
+    states_folder = "states"
+    if not os.path.exists(states_folder):
+        os.makedirs(states_folder)
+
+    # Find the next available filename (e.g., deck3.txt, deck4.txt, etc.)
+    existing_files = [f for f in os.listdir(states_folder) if f.startswith("deck") and f.endswith(".txt")]
+    next_index = len(existing_files) + 1
+    file_path = os.path.join(states_folder, f"deck{next_index}.txt")
+
+    with open(file_path, "w") as file:
+        for pile in deck.piles:
+            pile_type = pile.pile_type
+            cards = ";".join([f"{card.rank}_of_{card.suit}" for card in pile.cards])
+            file.write(f"{pile_type};{cards}\n")
+
+    print(f"Deck saved to {file_path}")
 
 start_menu()

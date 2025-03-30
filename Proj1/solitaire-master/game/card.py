@@ -1,13 +1,11 @@
 import random
 
-
 class Card:
-    def __init__(self, name_of_image, card_size, rank, suit, face_up=False):
-        self.name_of_image = name_of_image
+    def __init__(self, name_of_image, card_size, rank, suit):
+        self.name_of_image = name_of_image 
         self.card_size = card_size
-        self.suit = suit
-        self.rank = rank
-        self.face_up = face_up
+        self.suit = suit # 'hearts', 'diamonds', 'clubs', 'spades'
+        self.rank = rank # 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'
 
         if self.suit == 'diamonds' or self.suit == 'hearts':
             self.color = 'red'

@@ -7,10 +7,10 @@ class TestValidTransfer(unittest.TestCase):
         """
         Set up test piles with predefined cards.
         """
-        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades", face_up=True)
-        self.card2 = Card("resources/cards/2_of_spades.png", (100, 150), "2", "spades", face_up=True)
-        self.card3 = Card("resources/cards/3_of_hearts.png", (100, 150), "3", "hearts", face_up=True)
-        self.card4 = Card("resources/cards/4_of_clubs.png", (100, 150), "4", "clubs", face_up=True)
+        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades")
+        self.card2 = Card("resources/cards/2_of_spades.png", (100, 150), "2", "spades")
+        self.card3 = Card("resources/cards/3_of_hearts.png", (100, 150), "3", "hearts")
+        self.card4 = Card("resources/cards/4_of_clubs.png", (100, 150), "4", "clubs")
 
         # Create a tableau pile with cards
         self.source_pile = Pile([self.card2, self.card1], 0, 0, (100, 150), pile_type="tableau")
@@ -75,10 +75,10 @@ class TestPile(unittest.TestCase):
         """
         Set up test piles with predefined cards.
         """
-        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades", face_up=True)
-        self.card2 = Card("resources/cards/2_of_spades.png", (100, 150), "2", "spades", face_up=True)
-        self.card3 = Card("resources/cards/3_of_spades.png", (100, 150), "3", "spades", face_up=True)
-        self.card4 = Card("resources/cards/4_of_hearts.png", (100, 150), "4", "hearts", face_up=True)
+        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades")
+        self.card2 = Card("resources/cards/2_of_spades.png", (100, 150), "2", "spades")
+        self.card3 = Card("resources/cards/3_of_spades.png", (100, 150), "3", "spades")
+        self.card4 = Card("resources/cards/4_of_hearts.png", (100, 150), "4", "hearts")
 
         # Create a tableau pile with cards
         self.source_pile = Pile([self.card2, self.card1], 0, 0, (100, 150), pile_type="tableau")
@@ -129,10 +129,10 @@ class TestIsValidMovingPile(unittest.TestCase):
         """
         Set up test piles with predefined cards.
         """
-        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades", face_up=True)
-        self.card2 = Card("resources/cards/2_of_hearts.png", (100, 150), "2", "hearts", face_up=True)
-        self.card3 = Card("resources/cards/3_of_spades.png", (100, 150), "3", "spades", face_up=True)
-        self.card4 = Card("resources/cards/4_of_hearts.png", (100, 150), "4", "hearts", face_up=True)
+        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades")
+        self.card2 = Card("resources/cards/2_of_hearts.png", (100, 150), "2", "hearts")
+        self.card3 = Card("resources/cards/3_of_spades.png", (100, 150), "3", "spades")
+        self.card4 = Card("resources/cards/4_of_hearts.png", (100, 150), "4", "hearts")
 
         # Create a tableau pile with cards
         self.pile = Pile([self.card4, self.card3, self.card2, self.card1], 0, 0, (100, 150), pile_type="tableau")

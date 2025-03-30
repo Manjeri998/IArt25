@@ -1,7 +1,7 @@
 from copy import copy, deepcopy
 import os
 import random
-import pygame
+import pygame # type: ignore
 from itertools import count
 from pile import Pile
 from card import Card
@@ -11,16 +11,15 @@ from card import Card
 class Deck:
     def __lt__(self, other):
         return id(self) < id(other)
-    
 
-    def __init__(self, piles=[], card_images={}, card_size=(100, 150)):
-        # cards list is only used when starting/restarting a game
+    def __init__(self, piles=[], card_size=(100, 150)):
         self.cards = []
 
         self.suits = ['clubs', 'diamonds', 'hearts', 'spades']
         self.ranks = ['ace', '2', '3', '4', '5', '6', '7', '8',
                       '9', '10', 'jack', 'queen', 'king']
 
+        self.card_images = {}
         self.selection = False
         self.selected_cards = []
         self.selected_pile = None
@@ -29,36 +28,21 @@ class Deck:
         self.empty_color = (100, 100, 200)
         self.empty_color2 = (100, 100, 230)
 
-        # these attributes can be modified when undoing/redoing
         self.piles = piles
-        self.card_images = card_images
         self.card_size = card_size
 
         self.load_card_images()
         self.resize_card_images()
         
-        name_of_image = os.path.join('resources', 'card_back.png')
-        self.card_back_image = pygame.image.load(name_of_image)
-        self.card_back = self.resize_card_back()
     
     def __str__(self):
-        """
-        Returns a string representation of the deck's state.
-        Each pile and its cards are displayed.
-        """
         result = []
         for i, pile in enumerate(self.piles):
             pile_cards = [card.name_of_image for card in pile.cards]
             result.append(f"Pile {i}: {pile_cards}")
         return "\n".join(result)
-
-    def resize_card_back(self):
-        return pygame.transform.scale(self.card_back_image, self.card_size)
     
     def load_card_images(self):
-        """
-        Loads all card images into the card_images dictionary.
-        """
         for suit in self.suits:
             for rank in self.ranks:
                 image_path = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
@@ -68,18 +52,14 @@ class Deck:
                     print(f"Warning: Card image not found: {image_path}")
 
     def clone(self):
-        """
-        Creates a deep copy of the current deck, ensuring that cards are properly cloned.
-        """
-        new_piles = deepcopy(self.piles)  # Deep copy piles
+        new_piles = deepcopy(self.piles) 
 
-        # Ensure each card in each pile is a new instance
         for pile in new_piles:
-            pile.cards = [Card(card.name_of_image, card.card_size, card.rank, card.suit, card.face_up) for card in pile.cards]
+            pile.cards = [Card(card.name_of_image, card.card_size, card.rank, card.suit) for card in pile.cards]
 
         new_deck = Deck(
             piles=new_piles,
-            card_images=self.card_images,  # Pass the existing card images
+            card_images=self.card_images, 
             card_size=self.card_size
         )
         return new_deck
@@ -87,14 +67,6 @@ class Deck:
     def resize_card_images(self):
         for name_of_image, card_image in self.card_images.items():
             self.card_images[name_of_image] = pygame.transform.scale(card_image, self.card_size)
-
-    def load_cards(self):
-        for suit in self.suits:
-            for rank in self.ranks:
-                name_of_image = os.path.join('resources', 'cards', '{}_of_{}.png'.format(rank, suit))
-                self.card_images[name_of_image] = pygame.image.load(name_of_image)
-                self.cards.append(Card(name_of_image, self.card_size, rank, suit))
-        self.resize_card_images()
 
     def load_piles(self, display_size):
         display_width, display_height = display_size
@@ -132,9 +104,6 @@ class Deck:
         random.shuffle(self.cards)
     
     def get_possible_moves(deck):
-        """
-        Retorna uma lista de estados possíveis do baralho após realizar movimentos válidos.
-        """
         valid_moves = []
         
         for source_pile in deck.piles:  # Itera sobre todas as pilhas como possíveis fontes de movimento
@@ -161,18 +130,6 @@ class Deck:
     
     @classmethod
     def load_deck_from_file(cls, file_path, card_size=(100, 150), display_size=(1100, 800)):
-        """
-        Reads a file and creates a Deck object with 8 tableau piles, 4 free-cell piles, and 4 foundation piles.
-        All piles are initialized as empty and then filled according to the file.
-
-        Args:
-            file_path (str): The path to the file describing the deck.
-            card_size (tuple): The size of the cards (width, height).
-            display_size (tuple): The size of the display (width, height).
-
-        Returns:
-            Deck: A Deck object initialized based on the file's contents.
-        """
         piles = []
         suits = ['clubs', 'diamonds', 'hearts', 'spades']
         ranks = ['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king']
@@ -210,7 +167,7 @@ class Deck:
                     rank, suit = card_str.split('_of_')
                     if rank in ranks and suit in suits:
                         name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
-                        pile_cards.append(Card(name_of_image, card_size, rank, suit, face_up=True))
+                        pile_cards.append(Card(name_of_image, card_size, rank, suit))
 
                 # Assign cards to the appropriate pile
                 if pile_type == "tableau":
@@ -228,6 +185,7 @@ class Deck:
                         if pile.pile_type == "foundation" and len(pile.cards) == 0:
                             pile.cards = pile_cards
                             break
+        
 
         # Return the deck with the initialized piles
         return cls(piles=piles, card_size=card_size)
@@ -310,10 +268,6 @@ class Deck:
                 game_display.blit(img, [card.x, card.y])
 
     def make_move(self, move):
-        """
-        Applies the given move to the deck.
-        A move is represented as a tuple containing the source pile, target pile, and the selected cards.
-        """
         source_pile, target_pile, selected_cards = move
 
         source_index = next(i for i, p in enumerate(self.piles) if p.pile_type == source_pile.pile_type and len(p.cards) == len(source_pile.cards))
@@ -322,10 +276,6 @@ class Deck:
         self.piles[source_index].transfer_cards(selected_cards, self.piles[target_index], self.ranks)
 
     def is_valid_sequence(self, cards):
-        """
-        Checks if the given list of cards is in a valid order to be moved.
-        Example rules: Descending order, alternating colors.
-        """
         if not cards or len(cards) == 1:
             return True  # A single card is always valid
 
@@ -343,9 +293,6 @@ class Deck:
         return True
     
     def can_move_to_foundation(self, card):
-        """
-        Checks if the given card can be moved to any foundation pile.
-        """
         for pile in self.piles:
             if pile.pile_type == "foundation":
                 # If the foundation pile is empty, only an Ace can be placed
@@ -359,21 +306,19 @@ class Deck:
         return False
     
     def find_card(self, card):
-        """
-        Finds the pile index in the deck and the card index within the pile.
-
-        Args:
-            card (Card): The card to search for.
-
-        Returns:
-            tuple: A tuple containing the pile index in the deck and the card index within the pile.
-                Returns (None, None) if the card is not found.
-        """
         for pile_index, pile in enumerate(self.piles):
             for card_index, pile_card in enumerate(pile.cards):
                 if pile_card == card:  
                     return pile_index, card_index
         return None, None
+
+    def add_all_cards(self):
+        self.cards = []  
+        for suit in self.suits:
+            for rank in self.ranks:
+                name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
+                card = Card(name_of_image, self.card_size, rank, suit)
+                self.cards.append(card)
 
 
 
@@ -388,7 +333,7 @@ class CompressedDeck:
         return Deck(self.piles, card_images, card_size)
 
     def __str__(self):
-        return str([card for card in self.piles if card.face_up == True])
+        return str([card for card in self.piles])
 
     def __repr__(self):
         return "CompressedDeck #{}".format(self.id)

@@ -8,9 +8,9 @@ class TestDeck(unittest.TestCase):
         """
         Set up a test deck with predefined piles and cards.
         """
-        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades", face_up=True)
-        self.card2 = Card("resources/cards/2_of_hearts.png", (100, 150), "2", "hearts", face_up=True)
-        self.card3 = Card("resources/cards/3_of_clubs.png", (100, 150), "3", "clubs", face_up=True)
+        self.card1 = Card("resources/cards/ace_of_spades.png", (100, 150), "ace", "spades")
+        self.card2 = Card("resources/cards/2_of_hearts.png", (100, 150), "2", "hearts")
+        self.card3 = Card("resources/cards/3_of_clubs.png", (100, 150), "3", "clubs")
 
         pile1 = Pile([self.card1, self.card2], 0, 0, (100, 150), pile_type="tableau")
         pile2 = Pile([self.card3], 0, 0, (100, 150), pile_type="foundation")
@@ -37,7 +37,7 @@ class TestDeck(unittest.TestCase):
         """
         Test finding a card that does not exist in the deck.
         """
-        card_not_in_deck = Card("resources/cards/4_of_diamonds.png", (100, 150), "4", "diamonds", face_up=True)
+        card_not_in_deck = Card("resources/cards/4_of_diamonds.png", (100, 150), "4", "diamonds")
         pile_index, card_index = self.deck.find_card(card_not_in_deck)
         self.assertIsNone(pile_index)
         self.assertIsNone(card_index)

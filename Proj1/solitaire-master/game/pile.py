@@ -13,17 +13,14 @@ class Pile:
         if self.pile_type == 'tableau':
             self.fanned = True
             self.order = self.Order(foundation='king', rank=-1, color_suit='alt-color')
-            self.face_up = 'top'
             self.height = 500
         elif self.pile_type == 'foundation':
             self.fanned = False
             self.order = self.Order(foundation='ace', rank=1, color_suit='same-suit')
-            self.face_up = 'all'
             self.height = self.card_height
         elif self.pile_type == 'free-cell':
             self.fanned = False
             self.order = self.Order(foundation=None, rank=None, color_suit=None)
-            self.face_up = 'all'
             self.height = self.card_height
 
         self.max_card_spacing = 60
@@ -56,17 +53,6 @@ class Pile:
     @property
     def pile_bottom(self):
         return self.cards[-1].position[1] + self.card_height
-
-    def update_faces(self):
-        if len(self.cards) != 0:
-            for index, card in enumerate(self.cards):
-                if self.face_up == 'none':
-                    card.face_up = False
-                elif self.face_up == 'top':
-                    if index == len(self.cards) - 1:
-                        card.face_up = True
-                elif self.face_up == 'all':
-                    card.face_up = True
     
     def is_foundation(self):
         return self.pile_type == "foundation"
@@ -80,7 +66,6 @@ class Pile:
                     card.position = (self.x, self.y)
 
     def update(self):
-        self.update_faces()
         self.update_positions()
 
     def fit_pile_to_screen(self, display_height):
@@ -112,7 +97,7 @@ class Pile:
 
         for index, card in enumerate(self.cards):
                 card_clicked = card.check_if_clicked(mouse_position)
-                if card_clicked and card.face_up:
+                if card_clicked:
                     selection = True
                     selected_cards = self.cards[index:]
 
