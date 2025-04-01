@@ -186,18 +186,19 @@ class ASTAR(SearchAlgorithm):
 
         # 🏗️ Benefício por colunas vazias
         empty_columns = sum(1 for pile in deck.piles if pile.pile_type == "tableau" and len(pile.cards) == 0)
-        h_score -= empty_columns * 4  # Mais colunas vazias = melhor
+        h_score -= empty_columns * 3  # Mais colunas vazias = melhor
 
         # 🚧 Penalizar células livres ocupadas
         free_cells_used = sum(1 for pile in deck.piles if pile.pile_type == "free-cell" and len(pile.cards) > 0)
-        h_score += free_cells_used * 3  # Evitar sobrecarregar células livres
+        h_score += free_cells_used * 4  # Evitar sobrecarregar células livres
 
         return h_score
     
     def get_valid_moves(self, deck):
         valid_moves = []
 
-        free_moves = False
+        free_cell = False
+        free_move = False
         x = 0
         for source_pile in deck.piles:
             if (not source_pile.cards) or (source_pile.pile_type == "foundation"):
@@ -205,7 +206,8 @@ class ASTAR(SearchAlgorithm):
                 continue 
 
             base_card = source_pile.cards[-1] 
-            free_moves = False
+            free_cell = False
+            free_move = False
             y = 0
             for target_pile in deck.piles:
                 if x == y:
@@ -214,13 +216,20 @@ class ASTAR(SearchAlgorithm):
 
                 if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
                     if target_pile.pile_type == "free-cell":
-                        if free_moves:
+                        if    free_cell:
                             y+=1
                             continue
                         else:
                             valid_moves.append((x, y, [base_card]))
-                            free_moves = True
+                            free_cell = True
                     else: 
+                        if (not target_pile.cards) and target_pile.pile_type == "tableau":
+                            if free_move:
+                                y += 1
+                                continue
+                            else:
+                                valid_moves.append((x, y, [base_card]))
+                                free_move = True
                         valid_moves.append((x, y, [base_card]))
                     
                 y += 1
