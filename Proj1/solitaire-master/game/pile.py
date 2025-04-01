@@ -198,7 +198,7 @@ class Pile:
     def selection_rect(self, card):
         padding = 10
         rect_x = card.x - padding
-        rect_y = card.y - padding
+        rect_y = card.y - padding + 40
 
         card_index = self.cards.index(card)
         card_negative_index = card_index - len(self.cards) - 1
