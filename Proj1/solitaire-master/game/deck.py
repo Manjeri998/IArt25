@@ -59,7 +59,6 @@ class Deck:
 
         new_deck = Deck(
             piles=new_piles,
-            card_images=self.card_images, 
             card_size=self.card_size
         )
         return new_deck
@@ -164,10 +163,15 @@ class Deck:
                 pile_cards = []
 
                 for card_str in cards:
-                    rank, suit = card_str.split('_of_')
-                    if rank in ranks and suit in suits:
-                        name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
-                        pile_cards.append(Card(name_of_image, card_size, rank, suit))
+                    if not card_str:  # Skip empty card strings
+                        continue
+                    try:
+                        rank, suit = card_str.split('_of_')
+                        if rank in ranks and suit in suits:
+                            name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
+                            pile_cards.append(Card(name_of_image, card_size, rank, suit))
+                    except ValueError:
+                        print(f"Invalid card format: {card_str}")
 
                 # Assign cards to the appropriate pile
                 if pile_type == "tableau":
@@ -185,7 +189,6 @@ class Deck:
                         if pile.pile_type == "foundation" and len(pile.cards) == 0:
                             pile.cards = pile_cards
                             break
-        
 
         # Return the deck with the initialized piles
         return cls(piles=piles, card_size=card_size)

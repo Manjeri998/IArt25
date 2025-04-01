@@ -79,7 +79,7 @@ def game_loop():
     a_star_states = []
 
     deck = Deck()
-    deck = Deck.load_deck_from_file("states/deck2.txt")
+    deck = Deck.load_deck_from_file("states/deck10.txt")
     deck.update(None, display_dimensions[1])
 
     hm = history_manager.HistoryManager(deck)
@@ -112,10 +112,14 @@ def game_loop():
                                 astar_solver = ASTAR()
                                 score = [None] * 6
                                 astar_solver.run(deck, score)
+                                if score[0]:  
+                                    a_star_states = score[0]  
+                                    print("A* solution path loaded.")
                             if button.action == "next":
-                                deck = a_star_states.pop(0)
+                                deck = a_star_states.pop(0) 
+                                deck.update(None, display_dimensions[1])
                             if button.action == "load_state": 
-                                deck = Deck.load_deck_from_file("states/deck1.txt")
+                                deck = Deck.load_deck_from_file("states/deck6.txt")
                                 deck.update(None, display_dimensions[1])
                             if button.action == "new_deck":
                                 deck = Deck() 
@@ -229,7 +233,7 @@ def save_deck_to_file(deck):
     if not os.path.exists(states_folder):
         os.makedirs(states_folder)
 
-    # Find the next available filename (e.g., deck3.txt, deck4.txt, etc.)
+
     existing_files = [f for f in os.listdir(states_folder) if f.startswith("deck") and f.endswith(".txt")]
     next_index = len(existing_files) + 1
     file_path = os.path.join(states_folder, f"deck{next_index}.txt")
