@@ -6,6 +6,9 @@ from searchAlgorithms import ASTAR  # Import the ASTAR class
 import time
 import os
 from queue import PriorityQueue
+import tkinter as tk
+from tkinter import filedialog
+import re
 
 
 white = (255, 255, 255)
@@ -68,21 +71,42 @@ def win_screen():
         clock.tick(FPS)
 
 def game_loop():
-    undo_button = Button(display_dimensions, "Undo", (10, 10), (30, 30), grey, centered=False, text_size=11, action="undo")
-    pause_button = Button(display_dimensions, "Pause", (display_dimensions[0]-50, 10), (40, 30), grey, centered=False, text_size=10, action="pause")
-    astar_button = Button(display_dimensions, "A*", (10, 60), (30, 30), grey, centered=False, text_size=10, action="astar")
-    next_button = Button(display_dimensions, "Next", (10, 110), (30, 30), grey, centered=False, text_size=10, action="next")
-    load_state_button = Button(display_dimensions, "Load State", (10, 180), (100, 30), grey, centered=False, text_size=10, action="load_state")
-    new_deck_button = Button(display_dimensions, "New Deck", (10, 230), (100, 30), grey, centered=False, text_size=10, action="new_deck")
-    save_state_button = Button(display_dimensions, "Save State", (10, 280), (100, 30), grey, centered=False, text_size=10, action="save_state")
-    buttons = [undo_button, pause_button, astar_button, next_button, load_state_button, new_deck_button, save_state_button]
-    a_star_states = []
+    button_width = 100
+    button_height = 30
+    spacing = 10
+    start_x = 10
+    start_y = 10
 
+    buttons = [
+        Button(display_dimensions, "Undo", (start_x, start_y), (button_width, button_height), grey, centered=False,
+               text_size=11, action="undo"),
+        Button(display_dimensions, "A*", (start_x + (button_width + 4*spacing) * 2, start_y),
+               (button_width, button_height), grey, centered=False, text_size=10, action="astar"),
+        Button(display_dimensions, "Next", (start_x + (button_width + 4*spacing) * 3, start_y),
+               (button_width, button_height), grey, centered=False, text_size=10, action="next"),
+        Button(display_dimensions, "Load State", (start_x + (button_width + 6*spacing) * 4, start_y),
+               (button_width, button_height), grey, centered=False, text_size=10, action="load_state"),
+        Button(display_dimensions, "New Deck", (start_x + (button_width + 6*spacing) * 5, start_y),
+               (button_width, button_height), grey, centered=False, text_size=10, action="new_deck"),
+        Button(display_dimensions, "Save State", (start_x + (button_width + 6*spacing) * 6, start_y),
+               (button_width, button_height), grey, centered=False, text_size=10, action="save_state")
+    ]
+
+    a_star_states = []
     deck = Deck()
     deck = Deck.load_deck_from_file("states/deck10.txt")
     deck.update(None, display_dimensions[1])
 
     hm = history_manager.HistoryManager(deck)
+
+    def open_load_state_dialog():
+        root = tk.Tk()
+        root.withdraw()
+        file_path = filedialog.askopenfilename(initialdir="states", title="Select a state file",
+                                               filetypes=[("Text files", "*.txt")])
+        if file_path:
+            return file_path
+        return None
 
     while True:
         if deck.check_for_win():
@@ -116,18 +140,22 @@ def game_loop():
                                     a_star_states = score[0]  
                                     print("A* solution path loaded.")
                             if button.action == "next":
+
                                 deck = a_star_states.pop(0) 
                                 deck.update(None, display_dimensions[1])
-                            if button.action == "load_state": 
-                                deck = Deck.load_deck_from_file("states/deck6.txt")
-                                deck.update(None, display_dimensions[1])
+                            if button.action == "load_state":
+                                selected_file = open_load_state_dialog()
+                                if selected_file:
+                                    print(selected_file)
+                                    deck = Deck.load_deck_from_file(selected_file)
+                                    deck.update(None, display_dimensions[1])
                             if button.action == "new_deck":
-                                deck = Deck() 
+                                deck = Deck()
                                 deck.add_all_cards()
                                 deck.shuffle_cards()
                                 deck.load_piles(display_dimensions)
                                 deck.update(None, display_dimensions[1])
-                                hm = history_manager.HistoryManager(deck) 
+                                hm = history_manager.HistoryManager(deck)
                             if button.action == "save_state":
                                 save_deck_to_file(deck)
 
@@ -142,6 +170,7 @@ def game_loop():
         deck.display(game_display)
         pygame.display.update()
         clock.tick(FPS)
+
 
 def options_menu():
     settings = settings_manager.load_settings()
@@ -232,10 +261,17 @@ def save_deck_to_file(deck):
     states_folder = "states"
     if not os.path.exists(states_folder):
         os.makedirs(states_folder)
+    # Find all existing deck files and extract their numbers
+    existing_files = [f for f in os.listdir(states_folder) if re.match(r"deck(\d+)\.txt$", f)]
+    existing_numbers = sorted([int(re.search(r"deck(\d+)\.txt$", f).group(1)) for f in existing_files])
 
-
-    existing_files = [f for f in os.listdir(states_folder) if f.startswith("deck") and f.endswith(".txt")]
-    next_index = len(existing_files) + 1
+    # Find the next available number
+    next_index = 1
+    for num in existing_numbers:
+        if num == next_index:
+            next_index += 1
+        else:
+            break  # Found a gap, use this number
     file_path = os.path.join(states_folder, f"deck{next_index}.txt")
 
     with open(file_path, "w") as file:
