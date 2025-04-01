@@ -182,7 +182,7 @@ class ASTAR(SearchAlgorithm):
                         
                         # Penalizar todas as cartas acima dela
                         cards_above = pile.cards[i+1:]  
-                        h_score += len(cards_above) * 3  # Penaliza cada carta acima
+                        h_score += len(cards_above) * 5  # Penaliza cada carta acima
 
         # 🏗️ Benefício por colunas vazias
         empty_columns = sum(1 for pile in deck.piles if pile.pile_type == "tableau" and len(pile.cards) == 0)
