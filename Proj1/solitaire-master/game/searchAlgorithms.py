@@ -26,6 +26,7 @@ class SearchAlgorithm:
 
         source_pile = deck.piles[source_pile_index]
         target_pile = deck.piles[target_pile_index]
+        print(f"Movendo {selected_cards} de {source_pile} para {target_pile}")
 
         for card in selected_cards:
             source_pile.cards.pop()
@@ -73,6 +74,7 @@ class ASTAR(SearchAlgorithm):
             print("Gerando estados filhos...")
             start_time = time()
             valid_moves = self.get_valid_moves(deck)
+            print("Valid moves:", valid_moves)
             end_time = time()
     
             print(f"Time to generate valid moves: {end_time - start_time:.4f} seconds")
@@ -204,38 +206,55 @@ class ASTAR(SearchAlgorithm):
             if (not source_pile.cards) or (source_pile.pile_type == "foundation"):
                 x += 1
                 continue 
+                
+            valid_cards_list = self.get_valid_cards_in_pile(source_pile, deck) 
+            print(f"Valid cards in pile {x}: {valid_cards_list} of {source_pile}")
+            for valid_cards in valid_cards_list:
+                free_cell = False
+                free_move = False
+                y = 0
+                for target_pile in deck.piles:
+                    if x == y:
+                        y += 1
+                        continue  
 
-            base_card = source_pile.cards[-1] 
-            free_cell = False
-            free_move = False
-            y = 0
-            for target_pile in deck.piles:
-                if x == y:
-                    y += 1
-                    continue  
-
-                if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
-                    if target_pile.pile_type == "free-cell":
-                        if    free_cell:
-                            y+=1
-                            continue
-                        else:
-                            valid_moves.append((x, y, [base_card]))
-                            free_cell = True
-                    else: 
-                        if (not target_pile.cards) and target_pile.pile_type == "tableau":
-                            if free_move:
-                                y += 1
+                    if source_pile.valid_transfer(target_pile,valid_cards, deck.ranks):
+                        if target_pile.pile_type == "free-cell":
+                            if free_cell or len(target_pile.cards) != 1:
+                                y+=1
                                 continue
                             else:
-                                valid_moves.append((x, y, [base_card]))
-                                free_move = True
-                        valid_moves.append((x, y, [base_card]))
+                                valid_moves.append((x, y, valid_cards))
+                                free_cell = True
+                        else: 
+                            if (not target_pile.cards) and target_pile.pile_type == "tableau":
+                                if free_move:
+                                    y += 1
+                                    continue
+                                else:
+                                    valid_moves.append((x, y, valid_cards))
+                                    free_move = True
+                            valid_moves.append((x, y, valid_cards))
+                        
+                    y += 1
+                x += 1
                     
-                y += 1
-            x += 1
-                    
-
         return valid_moves
+    
+    def get_valid_cards_in_pile(self, pile, deck):
+        valid_cards = [[pile.cards[-1]]]
+
+        for i in range(len(pile.cards) - 2, -1, -1):
+            print(i)
+            card = pile.cards[i]
+            if pile.pile_type == "tableau":
+                x = [card] + valid_cards[-1] 
+                print(deck.ranks.index(card.rank), deck.ranks.index(pile.cards[i - 1].rank))
+                if i > 0 and (card.color == valid_cards[-1][0] or 
+                    deck.ranks.index(card.rank) != deck.ranks.index(valid_cards[-1][0].rank) + 1):
+                    break
+                valid_cards.append(x)
+            
+        return valid_cards
     
 
