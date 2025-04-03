@@ -66,21 +66,13 @@ class ASTAR(SearchAlgorithm):
     def run(self, board, score):
         start_time = time()
 
-        def goal_state_func(deck):
-            return deck.check_for_win()
+        # Define the goal state function as a lambda for efficiency
+        goal_state_func = lambda deck: deck.check_for_win()
 
+        # Optimized operator function
         def operators_func(deck):
-            print("Generating child states...")
-            
             valid_moves = self.get_valid_moves(deck)
-            
-            start_time = time()
-            child_states = [self.move(deck.clone(), move) for move in valid_moves]
-            end_time = time()
-            
-            print(f"Time to generate child states: {end_time - start_time:.4f} seconds")
-            
-            return child_states
+            return [self.move(deck.clone(), move) for move in valid_moves]
 
         solution_node = self.a_star_search(
             initial_state=board,
@@ -89,24 +81,30 @@ class ASTAR(SearchAlgorithm):
             heuristic_func=self.heuristic
         )
 
+        # If no solution is found
         if solution_node is None:
             score[0] = None  
             score[1] = time() - start_time  
             return
 
-        solution_path = []
+        # Efficiently construct solution path using a deque
+        solution_path = deque()
         current_node = solution_node
-        while current_node is not None:
-            solution_path.append(current_node.state)
-            current_node = current_node.parent
-        solution_path.reverse() 
 
-        score[0] = solution_path  
+        while current_node:
+            solution_path.appendleft(current_node.state)
+            current_node = current_node.parent
+
+        # Store the results in score
+        score[0] = list(solution_path)  
         score[1] = time() - start_time  
         score[2] = len(solution_path) - 1  
+
+        # Print solution details
         print("Solução encontrada!")
-        print("Número de movimentos:", len(solution_path) - 1)
-        print("Tempo total:", time() - start_time, "segundos")
+        print("Número de movimentos:", score[2])
+        print("Tempo total:", score[1], "segundos")
+
     
             
     def shortest_path(self, initial_coordinate, cluster):
@@ -162,30 +160,32 @@ class ASTAR(SearchAlgorithm):
     
     def heuristic(self, deck):
         h_score = 0
+        empty_columns = 0
+        free_cells_used = 0
 
-        # 🏆 Benefício para cartas na fundação
         for pile in deck.piles:
-            if pile.is_foundation():
-                h_score -= len(pile.cards) * 15  # Mais cartas na fundação = melhor
+            pile_type = pile.pile_type  # Avoid multiple attribute lookups
 
-        # 🔓 Penalizar cartas bloqueadas que deveriam ir para a fundação
-        for pile in deck.piles:
-            if pile.pile_type == "tableau":
+            if pile_type == "foundation":
+                h_score -= len(pile.cards) * 15  # Reward more cards in the foundation
+
+            elif pile_type == "tableau":
+                if not pile.cards:
+                    empty_columns += 1  # Count empty tableau columns
+                    continue
+                
                 for i, card in enumerate(pile.cards):
-                    if deck.can_move_to_foundation(card):  
-                        h_score -= 10  # Recompensa por estar pronto para a fundação
-                        
-                        # Penalizar todas as cartas acima dela
-                        cards_above = pile.cards[i+1:]  
-                        h_score += len(cards_above) * 5  # Penaliza cada carta acima
+                    if deck.can_move_to_foundation(card):
+                        h_score -= 10  # Reward cards ready for foundation
+                        h_score += len(pile.cards[i+1:]) * 5  # Penalize blocked cards
 
-        # 🏗️ Benefício por colunas vazias
-        empty_columns = sum(1 for pile in deck.piles if pile.pile_type == "tableau" and len(pile.cards) == 0)
-        h_score -= empty_columns * 3  # Mais colunas vazias = melhor
+            elif pile_type == "free-cell":
+                if pile.cards:
+                    free_cells_used += 1  # Count occupied free cells
 
-        # 🚧 Penalizar células livres ocupadas
-        free_cells_used = sum(1 for pile in deck.piles if pile.pile_type == "free-cell" and len(pile.cards) > 0)
-        h_score += free_cells_used * 4  # Evitar sobrecarregar células livres
+        # Apply penalties for empty tableau columns and occupied free cells
+        h_score -= empty_columns * 3
+        h_score += free_cells_used * 4
 
         return h_score
     
