@@ -192,44 +192,32 @@ class ASTAR(SearchAlgorithm):
     def get_valid_moves(self, deck):
         valid_moves = []
 
-        free_cell = False
-        free_move = False
-        x = 0
-        for source_pile in deck.piles:
-            if (not source_pile.cards) or (source_pile.pile_type == "foundation"):
-                x += 1
-                continue 
+        for x, source_pile in enumerate(deck.piles):
+            if not source_pile.cards or source_pile.pile_type == "foundation":
+                continue
 
-            base_card = source_pile.cards[-1] 
-            free_cell = False
-            free_move = False
-            y = 0
-            for target_pile in deck.piles:
-                if x == y:
-                    y += 1
+            base_card = source_pile.cards[-1]
+            free_cell_used = False
+            free_move_used = False
+
+            for y, target_pile in enumerate(deck.piles):
+                if x == y:  
                     continue  
 
-                if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
-                    if target_pile.pile_type == "free-cell":
-                        if    free_cell:
-                            y+=1
-                            continue
-                        else:
-                            valid_moves.append((x, y, [base_card]))
-                            free_cell = True
-                    else: 
-                        if (not target_pile.cards) and target_pile.pile_type == "tableau":
-                            if free_move:
-                                y += 1
-                                continue
-                            else:
-                                valid_moves.append((x, y, [base_card]))
-                                free_move = True
-                        valid_moves.append((x, y, [base_card]))
-                    
-                y += 1
-            x += 1
-                    
+                if not source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
+                    continue  
+
+                if target_pile.pile_type == "free-cell":
+                    if free_cell_used:
+                        continue
+                    free_cell_used = True  
+
+                elif not target_pile.cards and target_pile.pile_type == "tableau":
+                    if free_move_used:
+                        continue
+                    free_move_used = True  
+
+                valid_moves.append((x, y, [base_card]))
 
         return valid_moves
     
