@@ -70,21 +70,16 @@ class ASTAR(SearchAlgorithm):
             return deck.check_for_win()
 
         def operators_func(deck):
-            print("Gerando estados filhos...")
-            start_time = time()
+            print("Generating child states...")
+            
             valid_moves = self.get_valid_moves(deck)
-            end_time = time()
-    
-            print(f"Time to generate valid moves: {end_time - start_time:.4f} seconds")
-            child_states = []
+            
             start_time = time()
-            for move in valid_moves:
-                new_deck = deck.clone()
-                new_deck = self.move(new_deck, move)
-                child_states.append(new_deck)
+            child_states = [self.move(deck.clone(), move) for move in valid_moves]
             end_time = time()
-    
-            print(f"Time to generate valid moves: {end_time - start_time:.4f} seconds")
+            
+            print(f"Time to generate child states: {end_time - start_time:.4f} seconds")
+            
             return child_states
 
         solution_node = self.a_star_search(
