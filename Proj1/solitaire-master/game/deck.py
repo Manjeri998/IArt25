@@ -248,12 +248,18 @@ class Deck:
         self.deselect()
 
     def check_for_win(self):
-        foundation_piles = [pile for pile in self.piles if pile.pile_type == 'foundation']
-        for pile in foundation_piles:
-            if len(pile.cards) < 13:
+        #foundation_piles = [pile for pile in self.piles if pile.pile_type == 'foundation']
+        #for pile in foundation_piles:
+        #    if len(pile.cards) < 13:
+        #        return False
+        #else:
+        #    return True
+        free_cell_piles = [pile for pile in self.piles if pile.pile_type == 'free-cell' or pile.pile_type == 'tableau']
+        for pile in free_cell_piles:
+            if len(pile.cards) > 0:
                 return False
-        else:
-            return True
+        return True
+
 
     def display(self, game_display):
         for pile in self.piles:
@@ -332,7 +338,7 @@ class CompressedDeck:
         self.piles = piles
 
     def decompress(self, card_images, card_size):
-        return Deck(self.piles, card_images, card_size)
+        return Deck(self.piles, card_size)
 
     def __str__(self):
         return str([card for card in self.piles])

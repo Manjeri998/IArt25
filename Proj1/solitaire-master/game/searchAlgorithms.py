@@ -33,8 +33,50 @@ class SearchAlgorithm:
         
         deck.piles[source_pile_index] = source_pile
         deck.piles[target_pile_index] = target_pile
-
         return deck
+
+    def get_valid_moves(self, deck):
+        valid_moves = []
+
+        x = 0
+        for source_pile in deck.piles:
+            if (not source_pile.cards) or (source_pile.pile_type == "foundation"):
+                x += 1
+                continue
+
+            base_card = source_pile.cards[-1]
+            free_cell = False
+            free_move = False
+            y = 0
+            for target_pile in deck.piles:
+                if x == y:
+                    y += 1
+                    continue
+
+                if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
+                    if target_pile.pile_type == "tableau":
+                        if not target_pile.cards:
+                            if free_move:
+                                y += 1
+                                continue
+                            else:
+                                valid_moves.append((x, y, [base_card]))
+                                free_move = True
+                        elif not free_move:
+                            valid_moves.append((x, y, [base_card]))
+                    elif target_pile.pile_type == "free-cell":
+                        if free_cell or free_move:
+                            y += 1
+                            continue
+                        else:
+                            valid_moves.append((x, y, [base_card]))
+                            free_cell = True
+                    elif target_pile.pile_type == "foundation":
+                        valid_moves.append((x, y, [base_card]))
+                y += 1
+            x += 1
+        print(valid_moves)
+        return valid_moves
     
 
     def child_states(self, board):
@@ -193,7 +235,7 @@ class ASTAR(SearchAlgorithm):
         h_score += free_cells_used * 4  # Evitar sobrecarregar células livres
 
         return h_score
-    
+
     def get_valid_moves(self, deck):
         valid_moves = []
 
@@ -231,11 +273,108 @@ class ASTAR(SearchAlgorithm):
                                 valid_moves.append((x, y, [base_card]))
                                 free_move = True
                         valid_moves.append((x, y, [base_card]))
-                    
                 y += 1
             x += 1
-                    
-
         return valid_moves
     
 
+
+class BFS(SearchAlgorithm):
+    def __init__(self):
+        super().__init__()
+
+    def run(self, board, score):
+        """
+        Solves the game using BFS and stores the solution path in the score list.
+        Args:
+            board (Deck): The initial state of the game.
+            score (list): A list to store the solution path and other results.
+        """
+        print("Starting BFS algorithm...")
+        start_time = time()
+
+        # Define the goal state function
+        def goal_state_func(deck):
+            return deck.check_for_win()
+
+        # Define the operators function (generates child states)
+        def operators_func(deck):
+            valid_moves = self.get_valid_moves(deck)
+            child_states = []
+            for move in valid_moves:
+                new_deck = deck.clone()
+                new_deck = self.move(new_deck, move)
+                child_states.append((new_deck, move))
+            return child_states
+
+        # Run BFS
+        solution_path = self.bfs_search(
+            initial_state=board,
+            goal_state_func=goal_state_func,
+            operators_func=operators_func
+        )
+
+        if not solution_path:
+            print("No solution found within the time limit.")
+            score[0] = None  # No solution
+            score[1] = time() - start_time  # Time taken
+            return
+
+        # Store the results in the score list
+        score[0] = [state for state, _ in solution_path]  # Solution states
+        score[1] = time() - start_time  # Time taken
+        score[2] = len(solution_path) - 1  # Number of moves
+        score[3] = [move for _, move in solution_path[1:]]  # Moves to make
+
+        print("\nSolution found!")
+        print(f"Time taken: {score[1]:.2f} seconds")
+        print(f"Number of moves: {score[2]}")
+        print("\nMoves to make:")
+        for i, move in enumerate(score[3], 1):
+            src = move[0]
+            dest = move[1]
+            card = move[2][0]  # Get the first card in selected_cards
+            print(f"{i}. Move {card} from pile {src} to pile {dest}")
+
+    def bfs_search(self, initial_state, goal_state_func, operators_func):
+        """
+        Performs BFS search to find a solution path.
+        Returns a list of (state, move) tuples representing the solution path.
+        """
+        visited = set()
+        queue = deque()
+
+        # Store (state, move, parent_node) in queue
+        initial_node = (initial_state, None, None)
+        queue.append(initial_node)
+        visited.add(self.hash_state(initial_state))
+
+        while queue:
+            current_state, move, parent_node = queue.popleft()
+            if goal_state_func(current_state):
+                # Reconstruct path
+                path = []
+                node = (current_state, move, parent_node)
+                while node:
+                    path.append((node[0], node[1]))
+                    node = node[2]
+                path.reverse()
+                return path
+            for new_state, new_move in operators_func(current_state):
+                state_hash = self.hash_state(new_state)
+                if state_hash not in visited:
+                    visited.add(state_hash)
+                    new_node = (new_state, new_move, (current_state, move, parent_node))
+                    queue.append(new_node)
+
+        return None
+
+    def hash_state(self, deck):
+        """
+        Creates a hashable representation of the deck state.
+        """
+        state_tuple = tuple(
+            tuple((card.rank, card.suit) for card in pile.cards)
+            for pile in deck.piles
+        )
+        return hash(state_tuple)

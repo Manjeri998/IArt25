@@ -2,7 +2,7 @@ import pygame
 from deck import Deck
 from utils.ui import Text, Button, RadioGroup, Radio, Checkbox
 from utils import settings_manager, history_manager
-from searchAlgorithms import ASTAR  # Import the ASTAR class
+from searchAlgorithms import ASTAR, BFS  # Import the ASTAR class
 import time
 import os
 from queue import PriorityQueue
@@ -80,8 +80,10 @@ def game_loop():
     buttons = [
         Button(display_dimensions, "Undo", (start_x, start_y), (button_width, button_height), grey, centered=False,
                text_size=11, action="undo"),
-        Button(display_dimensions, "A*", (start_x + (button_width + 4*spacing) * 2, start_y),
+        Button(display_dimensions, "A*", (start_x + (button_width + 4*spacing) * 1, start_y),
                (button_width, button_height), grey, centered=False, text_size=10, action="astar"),
+        Button(display_dimensions, "BFS", (start_x + (button_width + 4*spacing) * 2, start_y),
+           (button_width, button_height), grey, centered=False, text_size=10, action="bfs"),
         Button(display_dimensions, "Next", (start_x + (button_width + 4*spacing) * 3, start_y),
                (button_width, button_height), grey, centered=False, text_size=10, action="next"),
         Button(display_dimensions, "Load State", (start_x + (button_width + 6*spacing) * 4, start_y),
@@ -149,6 +151,12 @@ def game_loop():
                                     print(selected_file)
                                     deck = Deck.load_deck_from_file(selected_file)
                                     deck.update(None, display_dimensions[1])
+                            if button.action == "bfs":
+                                bfs_solver = BFS()
+                                score = [None] * 6
+                                bfs_solver.run(deck, score)
+                                if score[3]:
+                                    a_star_states = score[0]
                             if button.action == "new_deck":
                                 deck = Deck()
                                 deck.add_all_cards()
