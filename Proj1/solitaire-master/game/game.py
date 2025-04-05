@@ -1,7 +1,7 @@
 import pygame
 from deck import Deck
 from ui import Text, Button
-from searchAlgorithms import ASTAR, BFS  # Import the ASTAR class
+from searchAlgorithms import ASTAR, BFS, Greedy  # Import the ASTAR class
 import os
 import tkinter as tk
 from tkinter import filedialog
@@ -83,9 +83,11 @@ def game_loop():
         Button(display_dimensions, "Undo", (start_x, start_y), (button_width, button_height), grey, centered=False,
                text_size=11, action="undo"),
         Button(display_dimensions, "A*", (start_x + (button_width + 4 * spacing) * 1, start_y),
-               (button_width, button_height), grey, centered=False, text_size=10, action="astar"),
-        Button(display_dimensions, "BFS", (start_x + (button_width + 4 * spacing) * 2, start_y),
-               (button_width, button_height), grey, centered=False, text_size=10, action="bfs"),
+               (button_width - 30, button_height), grey, centered=False, text_size=10, action="astar"),
+        Button(display_dimensions, "BFS", (start_x + (button_width + 4 * spacing) * 2 - 50, start_y),
+               (button_width - 30, button_height), grey, centered=False, text_size=10, action="bfs"),
+        Button(display_dimensions, "Greedy", (start_x + (button_width + 4 * spacing) * 3 - 100, start_y),
+               (button_width - 30, button_height), grey, centered=False, text_size=10, action="greedy"),
         Button(display_dimensions, "Next", (start_x + (button_width + 4 * spacing) * 3, start_y),
                (button_width, button_height), grey, centered=False, text_size=10, action="next"),
         Button(display_dimensions, "Load State", (start_x + (button_width + 6 * spacing) * 4, start_y),
@@ -149,6 +151,12 @@ def game_loop():
                                 score = [None] * 6
                                 bfs_solver.run(deck, score)
                                 if score[3]:
+                                    a_star_states = score[0]
+                            if button.action == "greedy":
+                                greedy_solver = Greedy()
+                                score = [None] * 6
+                                greedy_solver.run(deck, score)
+                                if score[0]:
                                     a_star_states = score[0]
                             if button.action == "next":
                                 if a_star_states:

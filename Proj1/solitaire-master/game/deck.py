@@ -353,7 +353,8 @@ class CompressedDeck:
                     return True
                 elif pile.cards:
                     top_card = pile.cards[-1]
-                    if top_card.suit == card.suit and self.ranks.index(card.rank) == self.ranks.index(top_card.rank) + 1:
+                    if top_card.suit == card.suit and self.ranks.index(card.rank) == self.ranks.index(
+                            top_card.rank) + 1:
                         return True
         return False
 
@@ -367,3 +368,8 @@ class CompressedDeck:
     def clone(self):
         new_piles = deepcopy(self.piles)
         return CompressedDeck(new_piles, self.card_size, self.ranks)
+
+    def is_sequential(self, card1, card2):
+        rank1 = self.ranks.index(card1.rank)
+        rank2 = self.ranks.index(card2.rank)
+        return rank1 == rank2 + 1 and card1.suit == card2.suit
