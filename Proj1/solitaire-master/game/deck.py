@@ -68,7 +68,6 @@ class Deck:
             self.card_images[name_of_image] = pygame.transform.scale(card_image, self.card_size)
 
     def load_piles(self, display_size):
-        display_width, display_height = display_size
         pile_spacing = 25
 
         start_x = 50
@@ -321,21 +320,3 @@ class Deck:
                 name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
                 card = Card(name_of_image, self.card_size, rank, suit)
                 self.cards.append(card)
-
-
-
-class CompressedDeck:
-    _ids = count(0)
-
-    def __init__(self, piles):
-        self.id = next(self._ids)
-        self.piles = piles
-
-    def decompress(self, card_images, card_size):
-        return Deck(self.piles, card_images, card_size)
-
-    def __str__(self):
-        return str([card for card in self.piles])
-
-    def __repr__(self):
-        return "CompressedDeck #{}".format(self.id)
