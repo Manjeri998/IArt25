@@ -1,9 +1,6 @@
-from queue import PriorityQueue
 from time import time
 from collections import deque
 from deck import CompressedDeck
-from math import inf
-from copy import deepcopy
 
 
 class TreeNode:
@@ -38,7 +35,6 @@ class SearchAlgorithm:
         deck.piles[target_pile_index] = target_pile
 
         return deck
-
 
     def child_states(self, board):
         new_states = []
@@ -163,7 +159,7 @@ class ASTAR(SearchAlgorithm):
                 for i, card in enumerate(pile.cards):
                     if deck.can_move_to_foundation(card):
                         h_score -= 10
-                        h_score += len(pile.cards[i+1:]) * 5
+                        h_score += len(pile.cards[i + 1:]) * 5
 
             elif pile_type == "free-cell":
                 if pile.cards:
@@ -204,4 +200,136 @@ class ASTAR(SearchAlgorithm):
 
                 valid_moves.append((x, y, [base_card]))
 
+        return valid_moves
+
+
+class BFS(SearchAlgorithm):
+    def __init__(self):
+        super().__init__()
+
+    def run(self, board, score):
+        print("Starting BFS algorithm...")
+        start_time = time()
+
+        # Define the goal state function
+        goal_state_func = lambda deck: deck.check_for_win()
+
+        # Define the operators function (generates child states)
+        def operators_func(deck):
+            valid_moves = self.get_valid_moves(deck)
+            child_states = []
+            for move in valid_moves:
+                new_deck = deck.clone()
+                new_deck = self.move(new_deck, move)
+                child_states.append((new_deck, move))
+            return child_states
+
+        # Compress the initial state
+        compressed_board = CompressedDeck(board.piles, board.card_size, board.ranks)
+
+        # Run BFS
+        solution_path = self.bfs_search(
+            initial_state=compressed_board,
+            goal_state_func=goal_state_func,
+            operators_func=operators_func
+        )
+
+        if not solution_path:
+            print("No solution found within the time limit.")
+            score[0] = None  # No solution
+            score[1] = time() - start_time  # Time taken
+            return
+
+        # Decompress the solution path
+        decompressed_path = [node.decompress() for node, _ in solution_path]
+
+        # Store the results in the score list
+        score[0] = decompressed_path  # Solution states
+        score[1] = time() - start_time  # Time taken
+        score[2] = len(decompressed_path) - 1  # Number of moves
+        score[3] = [move for _, move in solution_path[1:]]  # Moves to make
+
+        print("\nSolution found!")
+        print(f"Time taken: {score[1]:.2f} seconds")
+        print(f"Number of moves: {score[2]}")
+        print("\nMoves to make:")
+        for i, move in enumerate(score[3], 1):
+            src = move[0]
+            dest = move[1]
+            card = move[2][0]  # Get the first card in selected_cards
+            print(f"{i}. Move {card} from pile {src} to pile {dest}")
+
+    def bfs_search(self, initial_state, goal_state_func, operators_func):
+        """
+        Performs BFS search to find a solution path.
+        Returns a list of (state, move) tuples representing the solution path.
+        """
+        visited = set()
+        queue = deque()
+
+        # Store (state, move, parent_node) in queue
+        initial_node = (initial_state, None, None)
+        queue.append(initial_node)
+        visited.add(hash(initial_state))
+
+        while queue:
+            current_state, move, parent_node = queue.popleft()
+            if goal_state_func(current_state):
+                # Reconstruct path
+                path = []
+                node = (current_state, move, parent_node)
+                while node:
+                    path.append((node[0], node[1]))
+                    node = node[2]
+                path.reverse()
+                return path
+            for new_state, new_move in operators_func(current_state):
+                state_hash = hash(new_state)
+                if state_hash not in visited:
+                    visited.add(state_hash)
+                    new_node = (new_state, new_move, (current_state, move, parent_node))
+                    queue.append(new_node)
+
+        return None
+
+    def get_valid_moves(self, deck):
+        valid_moves = []
+
+        x = 0
+        for source_pile in deck.piles:
+            if (not source_pile.cards) or (source_pile.pile_type == "foundation"):
+                x += 1
+                continue
+
+            base_card = source_pile.cards[-1]
+            free_cell = False
+            free_move = False
+            y = 0
+            for target_pile in deck.piles:
+                if x == y:
+                    y += 1
+                    continue
+
+                if source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
+                    if target_pile.pile_type == "tableau":
+                        if not target_pile.cards:
+                            if free_move:
+                                y += 1
+                                continue
+                            else:
+                                valid_moves.append((x, y, [base_card]))
+                                free_move = True
+                        elif not free_move:
+                            valid_moves.append((x, y, [base_card]))
+                    elif target_pile.pile_type == "free-cell":
+                        if free_cell or free_move:
+                            y += 1
+                            continue
+                        else:
+                            valid_moves.append((x, y, [base_card]))
+                            free_cell = True
+                    elif target_pile.pile_type == "foundation":
+                        valid_moves.append((x, y, [base_card]))
+                y += 1
+            x += 1
         return valid_moves
