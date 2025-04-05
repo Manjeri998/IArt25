@@ -1,7 +1,7 @@
 from copy import copy, deepcopy
 import os
 import random
-import pygame # type: ignore
+import pygame  # type: ignore
 from itertools import count
 from pile import Pile
 from card import Card
@@ -33,7 +33,6 @@ class Deck:
 
         self.load_card_images()
         self.resize_card_images()
-
 
     def __str__(self):
         result = []
@@ -78,25 +77,32 @@ class Deck:
 
         tableau1 = Pile(self.cards[0:7], start_x, start_y, self.card_size)
         tableau2 = Pile(self.cards[7:14], start_x + self.card_size[0] + pile_spacing, start_y, self.card_size)
-        tableau3 = Pile(self.cards[14:21], start_x + self.card_size[0]*2 + pile_spacing*2, start_y, self.card_size)
-        tableau4 = Pile(self.cards[21:28], start_x + self.card_size[0]*3 + pile_spacing*3, start_y, self.card_size)
-        tableau5 = Pile(self.cards[28:34], start_x + self.card_size[0]*4 + pile_spacing*4, start_y, self.card_size)
-        tableau6 = Pile(self.cards[34:40], start_x + self.card_size[0]*5 + pile_spacing*5, start_y, self.card_size)
-        tableau7 = Pile(self.cards[40:46], start_x + self.card_size[0]*6 + pile_spacing*6, start_y, self.card_size)
-        tableau8 = Pile(self.cards[46:52], start_x + self.card_size[0]*7 + pile_spacing*7, start_y, self.card_size)
-        
+        tableau3 = Pile(self.cards[14:21], start_x + self.card_size[0] * 2 + pile_spacing * 2, start_y, self.card_size)
+        tableau4 = Pile(self.cards[21:28], start_x + self.card_size[0] * 3 + pile_spacing * 3, start_y, self.card_size)
+        tableau5 = Pile(self.cards[28:34], start_x + self.card_size[0] * 4 + pile_spacing * 4, start_y, self.card_size)
+        tableau6 = Pile(self.cards[34:40], start_x + self.card_size[0] * 5 + pile_spacing * 5, start_y, self.card_size)
+        tableau7 = Pile(self.cards[40:46], start_x + self.card_size[0] * 6 + pile_spacing * 6, start_y, self.card_size)
+        tableau8 = Pile(self.cards[46:52], start_x + self.card_size[0] * 7 + pile_spacing * 7, start_y, self.card_size)
 
         foundation1 = Pile([], foundation_start_x, pile_spacing, self.card_size, pile_type="free-cell")
-        foundation2 = Pile([], foundation_start_x + foundation_x_step, pile_spacing, self.card_size, pile_type="free-cell")
-        foundation3 = Pile([], foundation_start_x + foundation_x_step*2, pile_spacing, self.card_size, pile_type="free-cell")
-        foundation4 = Pile([], foundation_start_x + foundation_x_step*3, pile_spacing, self.card_size, pile_type="free-cell")
-        foundation5 = Pile([], foundation_start_x + foundation_x_step*4, pile_spacing, self.card_size, pile_type="foundation")
-        foundation6 = Pile([], foundation_start_x + foundation_x_step*5, pile_spacing, self.card_size, pile_type="foundation")
-        foundation7 = Pile([], foundation_start_x + foundation_x_step*6, pile_spacing, self.card_size, pile_type="foundation")
-        foundation8 = Pile([], foundation_start_x + foundation_x_step*7, pile_spacing, self.card_size, pile_type="foundation")
+        foundation2 = Pile([], foundation_start_x + foundation_x_step, pile_spacing, self.card_size,
+                           pile_type="free-cell")
+        foundation3 = Pile([], foundation_start_x + foundation_x_step * 2, pile_spacing, self.card_size,
+                           pile_type="free-cell")
+        foundation4 = Pile([], foundation_start_x + foundation_x_step * 3, pile_spacing, self.card_size,
+                           pile_type="free-cell")
+        foundation5 = Pile([], foundation_start_x + foundation_x_step * 4, pile_spacing, self.card_size,
+                           pile_type="foundation")
+        foundation6 = Pile([], foundation_start_x + foundation_x_step * 5, pile_spacing, self.card_size,
+                           pile_type="foundation")
+        foundation7 = Pile([], foundation_start_x + foundation_x_step * 6, pile_spacing, self.card_size,
+                           pile_type="foundation")
+        foundation8 = Pile([], foundation_start_x + foundation_x_step * 7, pile_spacing, self.card_size,
+                           pile_type="foundation")
 
         self.piles = [tableau1, tableau2, tableau3, tableau4, tableau5, tableau6, tableau7, tableau8,
-                      foundation1, foundation2, foundation3, foundation4, foundation5, foundation6, foundation7, foundation8]
+                      foundation1, foundation2, foundation3, foundation4, foundation5, foundation6, foundation7,
+                      foundation8]
 
     def shuffle_cards(self):
         random.shuffle(self.cards)
@@ -125,7 +131,6 @@ class Deck:
 
         return valid_moves
 
-
     @classmethod
     def load_deck_from_file(cls, file_path, card_size=(100, 150), display_size=(1100, 800)):
         piles = []
@@ -146,10 +151,12 @@ class Deck:
             piles.append(Pile([], start_x + i * (card_size[0] + pile_spacing), start_y, card_size, pile_type="tableau"))
 
         for i in range(4):  # 4 free-cell piles
-            piles.append(Pile([], foundation_start_x + i * foundation_x_step, pile_spacing, card_size, pile_type="free-cell"))
+            piles.append(
+                Pile([], foundation_start_x + i * foundation_x_step, pile_spacing, card_size, pile_type="free-cell"))
 
         for i in range(4):  # 4 foundation piles
-            piles.append(Pile([], foundation_start_x + (i + 4) * foundation_x_step, pile_spacing, card_size, pile_type="foundation"))
+            piles.append(Pile([], foundation_start_x + (i + 4) * foundation_x_step, pile_spacing, card_size,
+                              pile_type="foundation"))
 
         # Read the file and fill the piles
         with open(file_path, 'r') as file:
@@ -166,7 +173,7 @@ class Deck:
                 pile_cards = []
                 for card_str in cards:
                     # Only process valid card entries
-                    if "_of_" in card_str: 
+                    if "_of_" in card_str:
                         rank, suit = card_str.split('_of_')
                         if rank in ranks and suit in suits:
                             name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
@@ -198,8 +205,8 @@ class Deck:
 
     def which_pile_clicked(self, mouse_position):
         for pile in self.piles:
-                if pile.check_if_clicked(mouse_position):
-                    return pile
+            if pile.check_if_clicked(mouse_position):
+                return pile
         else:
             return None
 
@@ -225,7 +232,8 @@ class Deck:
                     valid_move = True
 
             if self.selected_pile != None:
-                self.selection, self.selected_cards, deselect_pile = self.selected_pile.selected(mouse_position, self.piles)
+                self.selection, self.selected_cards, deselect_pile = self.selected_pile.selected(mouse_position,
+                                                                                                 self.piles)
                 if deselect_pile:
                     self.deselect()
                 else:
@@ -257,9 +265,11 @@ class Deck:
     def display(self, game_display):
         for pile in self.piles:
             if pile.pile_type == 'foundation' and len(pile.cards) == 0:
-                pygame.draw.rect(game_display, self.empty_color, [pile.x, pile.y + 40, pile.card_width, pile.card_height])
+                pygame.draw.rect(game_display, self.empty_color,
+                                 [pile.x, pile.y + 40, pile.card_width, pile.card_height])
             if pile.pile_type == 'free-cell' and len(pile.cards) == 0:
-                pygame.draw.rect(game_display, self.empty_color2, [pile.x, pile.y + 40, pile.card_width, pile.card_height])
+                pygame.draw.rect(game_display, self.empty_color2,
+                                 [pile.x, pile.y + 40, pile.card_width, pile.card_height])
             for card in pile.cards:
                 if self.selection and self.selection_rect != None and card == self.selected_cards[0]:
                     pygame.draw.rect(game_display, self.selection_color, self.selection_rect)
@@ -271,8 +281,10 @@ class Deck:
     def make_move(self, move):
         source_pile, target_pile, selected_cards = move
 
-        source_index = next(i for i, p in enumerate(self.piles) if p.pile_type == source_pile.pile_type and len(p.cards) == len(source_pile.cards))
-        target_index = next(i for i, p in enumerate(self.piles) if p.pile_type == target_pile.pile_type and len(p.cards) == len(target_pile.cards))
+        source_index = next(i for i, p in enumerate(self.piles) if
+                            p.pile_type == source_pile.pile_type and len(p.cards) == len(source_pile.cards))
+        target_index = next(i for i, p in enumerate(self.piles) if
+                            p.pile_type == target_pile.pile_type and len(p.cards) == len(target_pile.cards))
 
         self.piles[source_index].transfer_cards(selected_cards, self.piles[target_index], self.ranks)
 
@@ -302,7 +314,8 @@ class Deck:
                 # If the foundation pile has cards, check if the card can be placed on top
                 elif pile.cards:
                     top_card = pile.cards[-1]
-                    if top_card.suit == card.suit and self.ranks.index(card.rank) == self.ranks.index(top_card.rank) + 1:
+                    if top_card.suit == card.suit and self.ranks.index(card.rank) == self.ranks.index(
+                            top_card.rank) + 1:
                         return True
         return False
 
@@ -320,3 +333,35 @@ class Deck:
                 name_of_image = os.path.join('resources', 'cards', f'{rank}_of_{suit}.png')
                 card = Card(name_of_image, self.card_size, rank, suit)
                 self.cards.append(card)
+
+
+class CompressedDeck:
+    def __init__(self, piles, card_size, ranks):
+        self.piles = piles
+        self.card_size = card_size
+        self.ranks = ranks
+
+    def decompress(self, card_images):
+        return Deck(piles=self.piles, card_size=self.card_size)
+
+    def can_move_to_foundation(self, card):
+        for pile in self.piles:
+            if pile.pile_type == "foundation":
+                if not pile.cards and card.rank == "ace":
+                    return True
+                elif pile.cards:
+                    top_card = pile.cards[-1]
+                    if top_card.suit == card.suit and self.ranks.index(card.rank) == self.ranks.index(top_card.rank) + 1:
+                        return True
+        return False
+
+    def check_for_win(self):
+        foundation_piles = [pile for pile in self.piles if pile.pile_type == "foundation"]
+        for pile in foundation_piles:
+            if len(pile.cards) < 13:
+                return False
+        return True
+
+    def clone(self):
+        new_piles = deepcopy(self.piles)
+        return CompressedDeck(new_piles, self.card_size, self.ranks)

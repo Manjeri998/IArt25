@@ -1,8 +1,10 @@
 from queue import PriorityQueue
 from time import time
 from collections import deque
+from deck import CompressedDeck
 from math import inf
 from copy import deepcopy
+
 
 class TreeNode:
     def __init__(self, state, parent=None):
@@ -16,11 +18,12 @@ class TreeNode:
 
     def __hash__(self):
         return hash((tuple(tuple(inner_list) for inner_list in self.state)))
-    
+
+
 class SearchAlgorithm:
     def __init__(self):
         self.tree_nodes = []
-    
+
     def move(self, deck, move):
         source_pile_index, target_pile_index, selected_cards = move
 
@@ -30,12 +33,12 @@ class SearchAlgorithm:
         for card in selected_cards:
             source_pile.cards.pop()
             target_pile.cards.append(card)
-        
+
         deck.piles[source_pile_index] = source_pile
         deck.piles[target_pile_index] = target_pile
 
         return deck
-    
+
 
     def child_states(self, board):
         new_states = []
@@ -45,7 +48,7 @@ class SearchAlgorithm:
     def win(self, board):
         foundation_piles = [pile for pile in board.piles if pile.pile_type == "foundation"]
         for pile in foundation_piles:
-            if len(pile.cards) != 13: 
+            if len(pile.cards) != 13:
                 return False
         return True
 
@@ -55,14 +58,15 @@ class SearchAlgorithm:
             node = node.parent
             depth += 1
         return depth
-    
+
     def timed_out(self, before) -> bool:
         return time() - before > 60
-    
+
+
 class ASTAR(SearchAlgorithm):
     def __init__(self):
         super().__init__()
-    
+
     def run(self, board, score):
         start_time = time()
 
@@ -74,8 +78,11 @@ class ASTAR(SearchAlgorithm):
             valid_moves = self.get_valid_moves(deck)
             return [self.move(deck.clone(), move) for move in valid_moves]
 
+        # Compress the initial state
+        compressed_board = CompressedDeck(board.piles, board.card_size, board.ranks)
+
         solution_node = self.a_star_search(
-            initial_state=board,
+            initial_state=compressed_board,
             goal_state_func=goal_state_func,
             operators_func=operators_func,
             heuristic_func=self.heuristic
@@ -83,8 +90,8 @@ class ASTAR(SearchAlgorithm):
 
         # If no solution is found
         if solution_node is None:
-            score[0] = None  
-            score[1] = time() - start_time  
+            score[0] = None
+            score[1] = time() - start_time
             return
 
         # Efficiently construct solution path using a deque
@@ -95,61 +102,40 @@ class ASTAR(SearchAlgorithm):
             solution_path.appendleft(current_node.state)
             current_node = current_node.parent
 
+        # Decompress the solution path
+        decompressed_path = [node.decompress(board.card_images) for node in solution_path]
+
         # Store the results in score
-        score[0] = list(solution_path)  
-        score[1] = time() - start_time  
-        score[2] = len(solution_path) - 1  
+        score[0] = decompressed_path
+        score[1] = time() - start_time
+        score[2] = len(decompressed_path) - 1
 
         # Print solution details
         print("Solução encontrada!")
         print("Número de movimentos:", score[2])
         print("Tempo total:", score[1], "segundos")
 
-    
-            
-    def shortest_path(self, initial_coordinate, cluster):
-        visited = set()
-        queue = deque([(initial_coordinate, [])])
-
-        while queue:
-            (row, col), path = queue.popleft()
-            if (row, col) in visited:
-                continue
-            visited.add((row, col))
-
-            if cluster[row][col] == 1:
-                return len(path)
-
-        return None
-
-    def get_distance(self, cluster1, cluster2):
-        total = inf
-        for (i, j) in [(i, j) for i in range(len(cluster1)) for j in range(len(cluster1))]:
-            if cluster1[i][j] == 1:
-                total = min(self.shortest_path((i, j), cluster2), total)
-        return total
-
     def a_star_search(self, initial_state, goal_state_func, operators_func, heuristic_func):
         root = TreeNode(initial_state)
         stack = [(root, heuristic_func(initial_state))]
-        filtered_states = set() 
+        filtered_states = set()
         filtered_states.add(initial_state)
 
         while len(stack):
-            node, value = stack.pop()  
+            node, value = stack.pop()
             print("Exploring node:", node.state, "Value:", value)
 
-            if goal_state_func(node.state): 
+            if goal_state_func(node.state):
                 return node
 
             children = operators_func(node.state)
             evaluated_children = [(child, heuristic_func(child) + self.depth(node) + 1) for child in children]
 
             for child, value in evaluated_children:
-                if child in filtered_states: 
+                if child in filtered_states:
                     continue
 
-                filtered_states.add(child) 
+                filtered_states.add(child)
                 child_tree = TreeNode(child, node)
                 node.add_child(child_tree)
                 stack.append((child_tree, value))
@@ -157,38 +143,37 @@ class ASTAR(SearchAlgorithm):
             stack = sorted(stack, key=lambda node: node[1], reverse=True)
 
         return None
-    
+
     def heuristic(self, deck):
         h_score = 0
         empty_columns = 0
         free_cells_used = 0
 
         for pile in deck.piles:
-            pile_type = pile.pile_type  # Avoid multiple attribute lookups
+            pile_type = pile.pile_type
 
             if pile_type == "foundation":
-                h_score -= len(pile.cards) * 15  # Reward more cards in the foundation
+                h_score -= len(pile.cards) * 15
 
             elif pile_type == "tableau":
                 if not pile.cards:
-                    empty_columns += 1  # Count empty tableau columns
+                    empty_columns += 1
                     continue
-                
+
                 for i, card in enumerate(pile.cards):
                     if deck.can_move_to_foundation(card):
-                        h_score -= 10  # Reward cards ready for foundation
-                        h_score += len(pile.cards[i+1:]) * 5  # Penalize blocked cards
+                        h_score -= 10
+                        h_score += len(pile.cards[i+1:]) * 5
 
             elif pile_type == "free-cell":
                 if pile.cards:
-                    free_cells_used += 1  # Count occupied free cells
+                    free_cells_used += 1
 
-        # Apply penalties for empty tableau columns and occupied free cells
         h_score -= empty_columns * 3
         h_score += free_cells_used * 4
 
         return h_score
-    
+
     def get_valid_moves(self, deck):
         valid_moves = []
 
@@ -201,24 +186,22 @@ class ASTAR(SearchAlgorithm):
             free_move_used = False
 
             for y, target_pile in enumerate(deck.piles):
-                if x == y:  
-                    continue  
+                if x == y:
+                    continue
 
                 if not source_pile.valid_transfer(target_pile, [base_card], deck.ranks):
-                    continue  
+                    continue
 
                 if target_pile.pile_type == "free-cell":
                     if free_cell_used:
                         continue
-                    free_cell_used = True  
+                    free_cell_used = True
 
                 elif not target_pile.cards and target_pile.pile_type == "tableau":
                     if free_move_used:
                         continue
-                    free_move_used = True  
+                    free_move_used = True
 
                 valid_moves.append((x, y, [base_card]))
 
         return valid_moves
-    
-
