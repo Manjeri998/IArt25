@@ -6,6 +6,7 @@ import os
 import tkinter as tk
 from tkinter import filedialog
 import re
+import history_manager
 
 
 white = (255, 255, 255)
@@ -90,11 +91,11 @@ def game_loop():
     ]
 
     a_star_states = []
-    deck = Deck()
+    history_stack = []
     deck = Deck.load_deck_from_file("states/deck8.txt")
     deck.update(None, display_dimensions[1])
 
-    #hm = history_manager.HistoryManager(deck)
+    hm = history_manager.HistoryManager(deck.clone())
 
     def open_load_state_dialog():
         root = tk.Tk()
@@ -121,25 +122,27 @@ def game_loop():
                 mouse_pos = pygame.mouse.get_pos()
                 if event.button == 1:
                     piles_to_update, valid_move = deck.handle_click(mouse_pos)
-                    deck.update(piles_to_update, display_dimensions[1])
-                    #if valid_move:
-                        #hm.valid_move_made(deck)
+                    if valid_move:
+                        deck.update(piles_to_update, display_dimensions[1])
+                        hm.valid_move_made(deck.clone())
 
                     for button in buttons:
                         if button.check_if_clicked(mouse_pos):
-                            #if button.action == "undo":
-                                #deck = hm.undo(deck)
+                            if button.action == "undo":
+                                deck = hm.undo(deck)
+                                deck.update(None, display_dimensions[1])
                             if button.action == "astar":
                                 astar_solver = ASTAR()
                                 score = [None] * 6
                                 astar_solver.run(deck, score)
-                                if score[0]:  
-                                    a_star_states = score[0]  
+                                if score[0]:
+                                    a_star_states = score[0]
                                     print("A* solution path loaded.")
                             if button.action == "next":
-
-                                deck = a_star_states.pop(0) 
-                                deck.update(None, display_dimensions[1])
+                                if a_star_states:
+                                    history_stack.append(deck.clone())
+                                    deck = a_star_states.pop(0)
+                                    deck.update(None, display_dimensions[1])
                             if button.action == "load_state":
                                 selected_file = open_load_state_dialog()
                                 if selected_file:
@@ -152,7 +155,6 @@ def game_loop():
                                 deck.shuffle_cards()
                                 deck.load_piles(display_dimensions)
                                 deck.update(None, display_dimensions[1])
-                                #hm = history_manager.HistoryManager(deck)
                             if button.action == "save_state":
                                 save_deck_to_file(deck)
 
@@ -167,7 +169,6 @@ def game_loop():
         deck.display(game_display)
         pygame.display.update()
         clock.tick(FPS)
-
 def start_menu():
     title = Text(display_dimensions, (0, -100), "Solitaire", 50, black)
 

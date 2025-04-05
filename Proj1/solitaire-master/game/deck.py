@@ -1,10 +1,9 @@
-from copy import copy, deepcopy
 import os
 import random
+from copy import deepcopy
 import pygame  # type: ignore
-from itertools import count
-from pile import Pile
 from card import Card
+from pile import Pile
 
 
 # the deck class should handle the clicking of the cards
@@ -12,7 +11,10 @@ class Deck:
     def __lt__(self, other):
         return id(self) < id(other)
 
-    def __init__(self, piles=[], card_size=(100, 150)):
+    def __init__(self, piles=None, card_size=(100, 150)):
+        if piles is None:
+            piles = []
+
         self.cards = []
 
         self.suits = ['clubs', 'diamonds', 'hearts', 'spades']
@@ -341,7 +343,7 @@ class CompressedDeck:
         self.card_size = card_size
         self.ranks = ranks
 
-    def decompress(self, card_images):
+    def decompress(self):
         return Deck(piles=self.piles, card_size=self.card_size)
 
     def can_move_to_foundation(self, card):

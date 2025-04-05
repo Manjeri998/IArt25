@@ -43,14 +43,14 @@ class Pile:
         Returns a detailed string representation of the pile for debugging.
         """
         return self.__str__()
-    
+
     def __len__(self):
         return len(self.cards)
 
     @property
     def pile_bottom(self):
         return self.cards[-1].position[1] + self.card_height
-    
+
     def is_foundation(self):
         return self.pile_type == "foundation"
 
@@ -93,17 +93,17 @@ class Pile:
         deselect_pile = False
 
         for index, card in enumerate(self.cards):
-                card_clicked = card.check_if_clicked(mouse_position)
-                if card_clicked:
-                    selection = True
-                    selected_cards = self.cards[index:]
+            card_clicked = card.check_if_clicked(mouse_position)
+            if card_clicked:
+                selection = True
+                selected_cards = self.cards[index:]
 
         return selection, selected_cards, deselect_pile
 
     def valid_transfer(self, pile_to_transfer_to, selected_cards, ranks):
         if not self.is_valid_moving_pile(selected_cards, ranks):
             return False
-        
+
         if len(pile_to_transfer_to.cards) != 0:
             bottom_card = pile_to_transfer_to.cards[-1]
         else:
@@ -119,7 +119,7 @@ class Pile:
                 if len(selected_cards) > 1:
                     return False
             return True
-        
+
         if pile_to_transfer_to.pile_type == 'foundation':
             if len(selected_cards) > 1:
                 return False
@@ -133,26 +133,26 @@ class Pile:
                 if top_card.suit != top_foundation_card.suit:
                     return False  # The suit must match
                 if ranks.index(top_card.rank) != ranks.index(top_foundation_card.rank) + 1:
-                    return False 
+                    return False
             return True
 
         # if a pile is empty only certain cards can be placed there
-        if bottom_card is None :
+        if bottom_card is None:
             if pile_to_transfer_to.pile_type == 'tableau':
                 valid = True
         else:
             # cards must be ordered depending on the pile they are in
-                rank_index = ranks.index(bottom_card.rank)
-                target_index = rank_index + pile_to_transfer_to.order.rank
-                if target_index < 0 or target_index >= len(ranks):
-                    valid = False
-                elif top_card.rank != ranks[target_index]:
-                    valid = False
-                if top_card.color == bottom_card.color:
-                    valid = False
+            rank_index = ranks.index(bottom_card.rank)
+            target_index = rank_index + pile_to_transfer_to.order.rank
+            if target_index < 0 or target_index >= len(ranks):
+                valid = False
+            elif top_card.rank != ranks[target_index]:
+                valid = False
+            if top_card.color == bottom_card.color:
+                valid = False
 
         return valid
-    
+
     def is_valid_moving_pile(self, cards, ranks):
         """
         Checks if the given list of cards forms a valid moving pile.
@@ -164,7 +164,7 @@ class Pile:
         Returns:
             bool: True if the cards form a valid moving pile, False otherwise.
         """
-        
+
         if self.cards[-len(cards):] != cards:
             return False
 
@@ -180,7 +180,6 @@ class Pile:
                 return False
 
         return True
-
 
     def transfer_cards(self, selected_cards, pile_to_transfer_to, ranks):
         if self.valid_transfer(pile_to_transfer_to, selected_cards, ranks):

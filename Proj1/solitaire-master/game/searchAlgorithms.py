@@ -103,7 +103,7 @@ class ASTAR(SearchAlgorithm):
             current_node = current_node.parent
 
         # Decompress the solution path
-        decompressed_path = [node.decompress(board.card_images) for node in solution_path]
+        decompressed_path = [node.decompress() for node in solution_path]
 
         # Store the results in score
         score[0] = decompressed_path
