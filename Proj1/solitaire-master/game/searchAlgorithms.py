@@ -62,6 +62,7 @@ class SearchAlgorithm:
 class ASTAR(SearchAlgorithm):
     def __init__(self):
         super().__init__()
+        self.visited_states = set()
 
     def run(self, board, score):
         start_time = time()
@@ -119,6 +120,7 @@ class ASTAR(SearchAlgorithm):
 
         while len(stack):
             node, value = stack.pop()
+            self.visited_states.add(node.state)
             print("Exploring node:", node.state, "Value:", value)
 
             if goal_state_func(node.state):
@@ -201,6 +203,7 @@ class ASTAR(SearchAlgorithm):
 class BFS(SearchAlgorithm):
     def __init__(self):
         super().__init__()
+        self.visited_states = set()
 
     def run(self, board, score):
         print("Starting BFS algorithm...")
@@ -255,10 +258,6 @@ class BFS(SearchAlgorithm):
             print(f"{i}. Move {card} from pile {src} to pile {dest}")
 
     def bfs_search(self, initial_state, goal_state_func, operators_func):
-        """
-        Performs BFS search to find a solution path.
-        Returns a list of (state, move) tuples representing the solution path.
-        """
         visited = set()
         queue = deque()
 
@@ -269,6 +268,7 @@ class BFS(SearchAlgorithm):
 
         while queue:
             current_state, move, parent_node = queue.popleft()
+            self.visited_states.add(current_state)
             if goal_state_func(current_state):
                 # Reconstruct path
                 path = []
@@ -335,6 +335,7 @@ class BFS(SearchAlgorithm):
 class Greedy(SearchAlgorithm):
     def __init__(self):
         super().__init__()
+        self.visited_states = set()
 
     def run(self, board, score):
         start_time = time()
@@ -388,7 +389,7 @@ class Greedy(SearchAlgorithm):
         while stack:
             node, value = stack.pop()
             print("Exploring node:", node.state, "Value:", value)
-
+            self.visited_states.add(node.state)
             if goal_state_func(node.state):
                 return node
 
