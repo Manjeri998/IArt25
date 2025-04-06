@@ -27,8 +27,8 @@ class Deck:
         self.selected_pile = None
         self.selection_rect = None
         self.selection_color = (255, 255, 0)
-        self.empty_color = (100, 100, 200)
-        self.empty_color2 = (100, 100, 230)
+        self.empty_color = (25, 150, 25)  # Darker green for foundation piles
+        self.empty_color2 = (100, 200, 100)  # Keeping the lighter green for free-cell piles
 
         self.piles = piles
         self.card_size = card_size
