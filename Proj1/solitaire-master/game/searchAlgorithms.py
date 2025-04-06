@@ -453,100 +453,115 @@ class Greedy(SearchAlgorithm):
 class DFS(SearchAlgorithm):
     def __init__(self):
         super().__init__()
-        self.visited_states = set()
 
     def run(self, board, score):
+        print("Starting DFS algorithm...")
         start_time = time()
 
-        # Initialize the solution path
-        solution_path = self.dfs_search(board)
+        # Compress the initial state
+        compressed_board = CompressedDeck(board.piles, board.card_size, board.ranks)
+        
+        print("Initial state compressed, starting search...")
+
+        # Run DFS search
+        solution_node = self.dfs_search(
+            initial_state=compressed_board,
+            max_depth=20  # Reduced depth limit for faster results
+        )
 
         # If no solution is found
-        if solution_path is None:
+        if solution_node is None:
+            print("No solution found within the depth limit.")
             score[0] = None
             score[1] = time() - start_time
             return
 
+        print("Solution node found, constructing path...")
+        
+        # Construct solution path
+        solution_path = []
+        current_node = solution_node
+        
+        while current_node:
+            solution_path.insert(0, current_node.state)
+            current_node = current_node.parent
+
+        print(f"Path constructed with {len(solution_path)} states")
+        
+        # Decompress the solution path
+        decompressed_path = [node.decompress() for node in solution_path]
+
         # Store the results in score
-        score[0] = solution_path
+        score[0] = decompressed_path
         score[1] = time() - start_time
-        score[2] = len(solution_path) - 1
+        score[2] = len(decompressed_path) - 1
 
         # Print solution details
-        print("Solution found with DFS!")
-        print("Number of moves:", score[2])
-        print("Total time:", score[1], "seconds")
+        print("Solução encontrada!")
+        print("Número de movimentos:", score[2])
+        print("Tempo total:", score[1], "segundos")
 
-    def dfs_search(self, initial_state, max_depth=100):
-        """
-        Performs a depth-first search to find a solution.
-        """
+    def dfs_search(self, initial_state, max_depth=20):
+        print("Starting DFS search with max depth:", max_depth)
         root = TreeNode(initial_state)
         stack = [(root, 0)]  # (node, depth)
-        self.visited_states = set()
-
+        visited = set()
+        visited_count = 0
+        
+        # Add initial state to visited set
+        visited.add(hash(str(initial_state)))
+        visited_count += 1
+        
+        nodes_explored = 0
+        
         while stack:
-            node, depth = stack.pop()
-            state_hash = self.state_to_hash(node.state)
-
-            # Skip if we've seen this state or exceeded max depth
-            if state_hash in self.visited_states or depth > max_depth:
-                continue
-
-            self.visited_states.add(state_hash)
-
+            node, depth = stack.pop()  # DFS uses stack (LIFO)
+            nodes_explored += 1
+            
+            if nodes_explored % 100 == 0:
+                print(f"Explored {nodes_explored} nodes, current depth: {depth}, stack size: {len(stack)}")
+            
             # Check if we've reached the goal state
-            # Use check_for_win method if it exists, otherwise use win method
-            if hasattr(node.state, 'check_for_win') and node.state.check_for_win():
-                # Reconstruct the path
-                path = []
-                current = node
-                while current:
-                    path.append(current.state)
-                    current = current.parent
-                return list(reversed(path))
-            elif self.win(node.state):
-                # Reconstruct the path
-                path = []
-                current = node
-                while current:
-                    path.append(current.state)
-                    current = current.parent
-                return list(reversed(path))
-
+            if node.state.check_for_win():
+                print(f"Goal state found at depth {depth} after exploring {nodes_explored} nodes!")
+                return node
+                
+            # Don't explore beyond max_depth
+            if depth >= max_depth:
+                continue
+                
             # Get valid moves and create child states
-            if depth < max_depth:
-                valid_moves = self.get_valid_moves(node.state)
-
-                # Sort moves by heuristic value (most promising first for DFS)
-                moves_with_scores = []
-                for move in valid_moves:
-                    new_state = node.state.clone()
-                    self.apply_move(new_state, move)
-                    score = self.dfs_heuristic(new_state)
-                    moves_with_scores.append((move, score))
-
-                # Sort by heuristic score (lower is better)
-                moves_with_scores.sort(key=lambda x: x[1])
-
-                # Add children to the stack (in reverse order so best moves are popped first)
-                for move, _ in reversed(moves_with_scores):
-                    new_state = node.state.clone()
-                    self.apply_move(new_state, move)
-
-                    # Skip if we've already seen this state
-                    if self.state_to_hash(new_state) in self.visited_states:
-                        continue
-
-                    child = TreeNode(new_state, node)
-                    node.add_child(child)
-                    stack.append((child, depth + 1))
-
+            valid_moves = self.get_valid_moves(node.state)
+            print(f"Found {len(valid_moves)} valid moves at depth {depth}")
+            
+            # Process moves in reverse order for better DFS performance
+            for move in reversed(valid_moves):
+                new_state = node.state.clone()
+                self.move(new_state, move)
+                
+                # Create a hash for the state
+                state_hash = hash(str(new_state))
+                
+                if state_hash in visited:
+                    continue
+                    
+                visited.add(state_hash)
+                visited_count += 1
+                
+                child_node = TreeNode(new_state, node)
+                node.add_child(child_node)
+                stack.append((child_node, depth + 1))
+            
+            if depth == 0:
+                print(f"Finished processing root node. Added {len(node.children)} children to stack.")
+                
+        print(f"Search complete. Explored {nodes_explored} nodes, visited {visited_count} unique states.")
         return None  # No solution found
 
     def get_valid_moves(self, deck):
         """
         Gets all valid moves for the current deck state.
+        Similar to the A* implementation for consistency.
         """
         valid_moves = []
 
