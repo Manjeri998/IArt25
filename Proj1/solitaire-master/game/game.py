@@ -38,7 +38,6 @@ try:
 except:
     background_image = None
 
-
 def quit_game():
     pygame.quit()
     quit()
@@ -67,9 +66,9 @@ def win_screen():
                             if button.action == "quit":
                                 quit_game()
                             elif button.action == "play_again":
-                                game_loop()
+                                return "play_again"
                             elif button.action == "start_menu":
-                                start_menu()
+                                return "start_menu"
                             else:
                                 print("Button action: {} does not exist".format(button.action))
 
@@ -90,8 +89,6 @@ def game_loop():
     spacing = 10
     start_x = 10
     start_y = 10
-
-    # In the game_loop function, update the buttons list:
     
     buttons = [
         Button(display_dimensions, "Undo", (start_x, start_y), (button_width, button_height), grey, centered=False,
@@ -129,15 +126,23 @@ def game_loop():
         root = tk.Tk()
         root.withdraw()
         file_path = filedialog.askopenfilename(initialdir="states", title="Select a state file",
-                                               filetypes=[("Text files", "*.txt")])
+                                            filetypes=[("Text files", "*.txt")])
         if file_path:
             return file_path
         return None
 
     while True:
         if deck.check_for_win():
-            win_screen()
-
+            result = win_screen()
+            if result == "play_again":
+                deck = Deck.load_deck_from_file("states/deck8.txt")
+                deck.update(None, display_dimensions[1])
+                hm = history_manager.HistoryManager(deck.clone())
+                a_star_states = []
+                continue
+            elif result == "start_menu":
+                return
+            
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 quit_game()
@@ -159,7 +164,6 @@ def game_loop():
                             if button.action == "undo":
                                 deck = hm.undo(deck)
                                 deck.update(None, display_dimensions[1])
-                            # In the button click handler section:
                             if button.action == "astar":
                                 astar_solver = ASTAR()
                                 score = [None] * 6
@@ -172,6 +176,7 @@ def game_loop():
                                 score = [None] * 6
                                 dfs_solver.run(deck, score)
                                 if score[0]:  
+                                    a_star_states = score[0]
                                     a_star_states = score[0]
                                     print("DFS solution path loaded.")
                             if button.action == "bfs":
@@ -414,7 +419,7 @@ def start_menu():
     
     # Updated button colors with various green shades
     play_button = Button(display_dimensions, "Play Game", (0, -80), (button_width, button_height), 
-                         (0, 150, 50), text_color=white, text_size=30, action="start_game")
+                        (0, 150, 50), text_color=white, text_size=30, action="start_game")
     
     tutorial_button = Button(display_dimensions, "Tutorial", (0, -10), 
                             (button_width, button_height), (20, 130, 70), text_color=white, 
@@ -444,9 +449,8 @@ def start_menu():
     credits_text3 = Text(display_dimensions, (10, display_dimensions[1] - 30), 
                        "Nuno Pinho Fernandes", 14, grey, centered=False)
 
-    # Initialize cards to be already visible on screen instead of above it
     animation_time = 0
-    num_cards = 15  # More cards for better effect
+    num_cards = 15
     card_positions = [(random.randint(0, display_dimensions[0]), random.randint(-50, 50)) for _ in range(num_cards)]
     card_speeds = [random.randint(4, 8) for _ in range(num_cards)]  # Increased speed range from 2-5 to 4-8
     card_depths = [random.uniform(0.5, 1.0) for _ in range(num_cards)]
@@ -479,7 +483,6 @@ def start_menu():
         else:
             dark_green_rgb = (41, 71, 38)
             
-            # Create a gradient from dark green to black
             for y in range(0, display_dimensions[1], 2):
                 intensity = 1 - (y / display_dimensions[1])
                 
@@ -527,19 +530,16 @@ def start_menu():
                 
                 game_display.blit(rotated_card, rot_rect.topleft)
             elif card_faces and len(card_faces) > 0:
-                # Use a random card face
                 card_idx = i % len(card_faces)
                 card_surface = pygame.Surface((40, 60), pygame.SRCALPHA)
                 card_surface.blit(card_faces[card_idx], (0, 0))
                 
-                # Apply blur effect based on depth
                 if card_depths[i] < 0.8:
                     blur_strength = int((1 - card_depths[i]) * 10)
                     overlay = pygame.Surface((40, 60), pygame.SRCALPHA)
                     overlay.fill((255, 255, 255, blur_strength * 20))
                     card_surface.blit(overlay, (0, 0))
                 
-                # Scale card based on depth
                 scale_factor = 0.7 + (0.3 * card_depths[i])
                 scaled_width = int(40 * scale_factor)
                 scaled_height = int(60 * scale_factor)
@@ -602,7 +602,6 @@ def start_menu():
         pygame.display.update()
         clock.tick(FPS)
 
-
 def save_deck_to_file(deck):
     """
     Saves the current state of the deck to a new file in the 'states' folder.
@@ -628,6 +627,5 @@ def save_deck_to_file(deck):
             file.write(f"{pile_type};{cards}\n")
 
     print(f"Deck saved to {file_path}")
-
-
+    
 start_menu()
