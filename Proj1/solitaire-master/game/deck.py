@@ -225,15 +225,19 @@ class Deck:
         piles_to_update = None
         valid_move = False
 
-        if self.selection == False:
+        if not self.selection:
             # the player selects card/s
             self.selected_pile = self.which_pile_clicked(mouse_position)
 
-            if self.selected_pile != None:
+            if self.selected_pile is not None:
                 if self.selected_pile.pile_type == 'stock':
                     valid_move = True
 
-            if self.selected_pile != None:
+            if self.selected_pile is not None:
+                if self.selected_pile.pile_type == 'foundation':
+                    self.deselect()
+                    return piles_to_update, valid_move
+
                 self.selection, self.selected_cards, deselect_pile = self.selected_pile.selected(mouse_position,
                                                                                                  self.piles)
                 if deselect_pile:
@@ -243,9 +247,8 @@ class Deck:
                         self.selection_rect = self.selected_pile.selection_rect(self.selected_cards[0])
         else:
             pile_to_transfer_to = self.which_pile_clicked(mouse_position)
-            if self.selected_pile != None and pile_to_transfer_to != None:
+            if self.selected_pile is not None and pile_to_transfer_to is not None:
                 valid_move = self.selected_pile.transfer_cards(self.selected_cards, pile_to_transfer_to, self.ranks)
-                piles_to_update = self.selected_pile, pile_to_transfer_to
             else:
                 piles_to_update = None
 
