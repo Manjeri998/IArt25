@@ -1,7 +1,6 @@
 import pickle
 import os
 
-
 default_settings = {'draw_three': False}
 
 def save_settings(settings):

@@ -618,5 +618,4 @@ class DFS(SearchAlgorithm):
             for card in pile.cards:
                 pile_repr.append((card.rank, card.suit))
             state_repr.append(tuple(pile_repr))
-
         return tuple(state_repr)
