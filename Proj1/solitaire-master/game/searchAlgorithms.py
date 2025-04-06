@@ -220,5 +220,177 @@ class ASTAR(SearchAlgorithm):
                 valid_moves.append((x, y, [base_card]))
 
         return valid_moves
+
+
+class DFS(SearchAlgorithm):
+    def __init__(self):
+        super().__init__()
+        self.visited_states = set()
+        
+    def run(self, board, score):
+        start_time = time()
+        
+        # Initialize the solution path
+        solution_path = self.dfs_search(board)
+        
+        # If no solution is found
+        if solution_path is None:
+            score[0] = None
+            score[1] = time() - start_time
+            return
+            
+        # Store the results in score
+        score[0] = solution_path
+        score[1] = time() - start_time
+        score[2] = len(solution_path) - 1
+        
+        # Print solution details
+        print("Solution found with DFS!")
+        print("Number of moves:", score[2])
+        print("Total time:", score[1], "seconds")
+    
+    def dfs_search(self, initial_state, max_depth=100):
+        """
+        Performs a depth-first search to find a solution.
+        """
+        root = TreeNode(initial_state)
+        stack = [(root, 0)]  # (node, depth)
+        self.visited_states = set()
+        
+        while stack:
+            node, depth = stack.pop()
+            state_hash = self.state_to_hash(node.state)
+            
+            # Skip if we've seen this state or exceeded max depth
+            if state_hash in self.visited_states or depth > max_depth:
+                continue
+                
+            self.visited_states.add(state_hash)
+            
+            # Check if we've reached the goal state
+            # Use check_for_win method if it exists, otherwise use win method
+            if hasattr(node.state, 'check_for_win') and node.state.check_for_win():
+                # Reconstruct the path
+                path = []
+                current = node
+                while current:
+                    path.append(current.state)
+                    current = current.parent
+                return list(reversed(path))
+            elif self.win(node.state):
+                # Reconstruct the path
+                path = []
+                current = node
+                while current:
+                    path.append(current.state)
+                    current = current.parent
+                return list(reversed(path))
+            
+            # Get valid moves and create child states
+            if depth < max_depth:
+                valid_moves = self.get_valid_moves(node.state)
+                
+                # Sort moves by heuristic value (most promising first for DFS)
+                moves_with_scores = []
+                for move in valid_moves:
+                    new_state = node.state.clone()
+                    self.apply_move(new_state, move)
+                    score = self.dfs_heuristic(new_state)
+                    moves_with_scores.append((move, score))
+                
+                # Sort by heuristic score (lower is better)
+                moves_with_scores.sort(key=lambda x: x[1])
+                
+                # Add children to the stack (in reverse order so best moves are popped first)
+                for move, _ in reversed(moves_with_scores):
+                    new_state = node.state.clone()
+                    self.apply_move(new_state, move)
+                    
+                    # Skip if we've already seen this state
+                    if self.state_to_hash(new_state) in self.visited_states:
+                        continue
+                        
+                    child = TreeNode(new_state, node)
+                    node.add_child(child)
+                    stack.append((child, depth + 1))
+        
+        return None  # No solution found
+    
+    def get_valid_moves(self, deck):
+        """
+        Gets all valid moves for the current deck state.
+        """
+        valid_moves = []
+        
+        for source_idx, source_pile in enumerate(deck.piles):
+            if not source_pile.cards:
+                continue
+                
+            for target_idx, target_pile in enumerate(deck.piles):
+                if source_idx == target_idx:
+                    continue
+                    
+                # Try moving different numbers of cards from the source pile
+                for i in range(len(source_pile.cards)):
+                    selected_cards = source_pile.cards[i:]
+                    
+                    if source_pile.valid_transfer(target_pile, selected_cards, deck.ranks):
+                        valid_moves.append((source_idx, target_idx, selected_cards))
+        
+        return valid_moves
+    
+    def apply_move(self, deck, move):
+        """
+        Applies a move to the deck.
+        """
+        source_idx, target_idx, selected_cards = move
+        source_pile = deck.piles[source_idx]
+        target_pile = deck.piles[target_idx]
+        
+        source_pile.transfer_cards(selected_cards, target_pile, deck.ranks)
+    
+    def dfs_heuristic(self, deck):
+        """
+        A heuristic function for DFS that estimates how close the state is to a solution.
+        Lower values are better.
+        """
+        score = 0
+        
+        # Count cards in foundation piles (more is better)
+        foundation_cards = 0
+        for pile in deck.piles:
+            if pile.pile_type == "foundation":
+                foundation_cards += len(pile.cards)
+        
+        # Reward more cards in foundation (negative because lower is better)
+        score -= foundation_cards * 10
+        
+        # Penalize cards in free cells (they're usually better elsewhere)
+        for pile in deck.piles:
+            if pile.pile_type == "free-cell" and pile.cards:
+                score += 5
+        
+        # Reward empty tableau piles (more flexibility)
+        empty_tableaus = 0
+        for pile in deck.piles:
+            if pile.pile_type == "tableau" and not pile.cards:
+                empty_tableaus += 1
+        score -= empty_tableaus * 8
+        
+        return score
+    
+    def state_to_hash(self, deck):
+        """
+        Converts a deck state to a hashable representation.
+        """
+        state_repr = []
+        
+        for pile in deck.piles:
+            pile_repr = []
+            for card in pile.cards:
+                pile_repr.append((card.rank, card.suit))
+            state_repr.append(tuple(pile_repr))
+        
+        return tuple(state_repr)
     
 
