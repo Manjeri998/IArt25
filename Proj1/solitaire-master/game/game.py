@@ -1,12 +1,10 @@
 import pygame
 from deck import Deck
-from ui import Text, Button, RadioGroup, Radio, Checkbox
 import history_manager, settings_manager
-from searchAlgorithms import ASTAR, DFS  # Make sure DFS is imported here
-import time
+from ui import Text, Button, Checkbox
+from searchAlgorithms import ASTAR, BFS, Greedy, DFS
 import os
 import math
-from queue import PriorityQueue
 import tkinter as tk
 from tkinter import filedialog
 import re
@@ -45,10 +43,14 @@ def quit_game():
     pygame.quit()
     quit()
 
+
 def win_screen():
-    quit_button = Button(display_dimensions, "Quit", (250, 0), (200, 100), red, text_color=white, text_size=25, action="quit")
-    play_again_button = Button(display_dimensions, "Play Again", (0, 0), (200, 100), blue, text_color=white, text_size=25, action="play_again")
-    start_menu_button = Button(display_dimensions, "Start Menu", (-250, 0), (200, 100), green, text_color=white, text_size=25, action="start_menu")
+    quit_button = Button(display_dimensions, "Quit", (250, 0), (200, 100), red, text_color=white, text_size=25,
+                         action="quit")
+    play_again_button = Button(display_dimensions, "Play Again", (0, 0), (200, 100), blue, text_color=white,
+                               text_size=25, action="play_again")
+    start_menu_button = Button(display_dimensions, "Start Menu", (-250, 0), (200, 100), green, text_color=white,
+                               text_size=25, action="start_menu")
     buttons = [quit_button, play_again_button, start_menu_button]
 
     win_text = Text(display_dimensions, (0, -200), "You Win!!!", 60, black)
@@ -58,18 +60,18 @@ def win_screen():
             if event.type == pygame.QUIT:
                 quit_game()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_pos = pygame.mouse.get_pos()
-                    if event.button == 1:
-                        for button in buttons:
-                            if button.check_if_clicked(mouse_pos):
-                                if button.action == "quit":
-                                    quit_game()
-                                elif button.action == "play_again":
-                                    game_loop()
-                                elif button.action == "start_menu":
-                                    start_menu()
-                                else:
-                                    print("Button action: {} does not exist".format(button.action))
+                mouse_pos = pygame.mouse.get_pos()
+                if event.button == 1:
+                    for button in buttons:
+                        if button.check_if_clicked(mouse_pos):
+                            if button.action == "quit":
+                                quit_game()
+                            elif button.action == "play_again":
+                                game_loop()
+                            elif button.action == "start_menu":
+                                start_menu()
+                            else:
+                                print("Button action: {} does not exist".format(button.action))
 
         game_display.fill(white)
 
@@ -81,6 +83,7 @@ def win_screen():
         pygame.display.update()
         clock.tick(FPS)
 
+
 def game_loop():
     button_width = 100
     button_height = 30
@@ -91,17 +94,21 @@ def game_loop():
     # In the game_loop function, update the buttons list:
     
     buttons = [
-    Button(display_dimensions, "Undo", (start_x, start_y), (button_width, button_height), grey, centered=False,
-           text_size=11, action="undo"),
-    Button(display_dimensions, "DFS", (start_x + (button_width + 4*spacing), start_y),
-           (button_width, button_height), grey, centered=False, text_size=10, action="dfs"),
-    Button(display_dimensions, "A*", (start_x + (button_width + 4*spacing) * 2, start_y),
-           (button_width, button_height), grey, centered=False, text_size=10, action="astar"),
-    Button(display_dimensions, "Next", (start_x + (button_width + 4*spacing) * 3, start_y),
-           (button_width, button_height), grey, centered=False, text_size=10, action="next"),
-        Button(display_dimensions, "Load State", (start_x + (button_width + 6*spacing) * 4, start_y),
+        Button(display_dimensions, "Undo", (start_x, start_y), (button_width, button_height), grey, centered=False,
+               text_size=11, action="undo"),
+        Button(display_dimensions, "DFS", (start_x + (button_width + 4 * spacing), start_y),
+               (button_width - 40, button_height), grey, centered=False, text_size=10, action="dfs"),
+        Button(display_dimensions, "A*", (start_x + (button_width + 4 * spacing) * 1.5 + 10, start_y),
+               (button_width - 40, button_height), grey, centered=False, text_size=10, action="astar"),
+        Button(display_dimensions, "BFS", (start_x + (button_width + 4 * spacing) * 2.5 - 50, start_y),
+               (button_width - 30, button_height), grey, centered=False, text_size=10, action="bfs"),
+        Button(display_dimensions, "Greedy", (start_x + (button_width + 4 * spacing) * 3.5 - 100, start_y),
+               (button_width - 30, button_height), grey, centered=False, text_size=10, action="greedy"),
+        Button(display_dimensions, "Next", (start_x + (button_width + 4 * spacing) * 3.5, start_y),
+               (button_width, button_height), grey, centered=False, text_size=10, action="next"),
+        Button(display_dimensions, "Load State", (start_x + (button_width + 6 * spacing) * 4, start_y),
                (button_width, button_height), grey, centered=False, text_size=10, action="load_state"),
-        Button(display_dimensions, "New Deck", (start_x + (button_width + 6*spacing) * 5, start_y),
+        Button(display_dimensions, "New Deck", (start_x + (button_width + 6 * spacing) * 5, start_y),
                (button_width, button_height), grey, centered=False, text_size=10, action="new_deck"),
         Button(display_dimensions, "Save State", (start_x + (button_width + 6*spacing) * 6, start_y),
                (button_width, button_height), grey, centered=False, text_size=10, action="save_state"),
@@ -165,8 +172,20 @@ def game_loop():
                                 score = [None] * 6
                                 dfs_solver.run(deck, score)
                                 if score[0]:  
-                                    a_star_states = score[0]  # We're reusing the same variable for both algorithms
+                                    a_star_states = score[0]
                                     print("DFS solution path loaded.")
+                            if button.action == "bfs":
+                                bfs_solver = BFS()
+                                score = [None] * 6
+                                bfs_solver.run(deck, score)
+                                if score[3]:
+                                    a_star_states = score[0]
+                            if button.action == "greedy":
+                                greedy_solver = Greedy()
+                                score = [None] * 6
+                                greedy_solver.run(deck, score)
+                                if score[0]:
+                                    a_star_states = score[0]
                             if button.action == "next":
                                 if a_star_states and len(a_star_states) > 0:
                                     deck = a_star_states.pop(0)
@@ -206,7 +225,8 @@ def game_loop():
 def start_menu():
     title = Text(display_dimensions, (0, -100), "Solitaire", 50, black)
 
-    play_button = Button(display_dimensions, "Play", (0, 0), (100, 50), blue, text_color=white, text_size=26, action="start_game")
+    play_button = Button(display_dimensions, "Play", (0, 0), (100, 50), blue, text_color=white, text_size=26,
+                         action="start_game")
     quit_button = Button(display_dimensions, "Quit", (200, 0), (100, 50), red, text_color=white, action="quit")
     buttons = [play_button, quit_button]
 
@@ -626,6 +646,7 @@ def start_menu():
         pygame.display.update()
         clock.tick(FPS)
 
+
 def save_deck_to_file(deck):
     """
     Saves the current state of the deck to a new file in the 'states' folder.
@@ -651,5 +672,6 @@ def save_deck_to_file(deck):
             file.write(f"{pile_type};{cards}\n")
 
     print(f"Deck saved to {file_path}")
+
 
 start_menu()
