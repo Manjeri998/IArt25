@@ -4,7 +4,7 @@ from searchAlgorithms import ASTAR, BFS, Greedy, DFS
 from deck import Deck
 import matplotlib
 
-matplotlib.use('TkAgg')  # Use TkAgg backend
+matplotlib.use('MacOSX')  # Try using the MacOSX backend instead of TkAgg
 import matplotlib.pyplot as plt
 
 
@@ -19,10 +19,17 @@ def run_algorithm(algorithm, deck):
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
+    # Check if the algorithm has visited_states attribute
+    states_count = 0
+    if hasattr(algorithm, 'visited_states'):
+        states_count = len(algorithm.visited_states)
+    elif hasattr(algorithm, 'visited'):  # Some implementations might use 'visited' instead
+        states_count = len(algorithm.visited)
+    
     return {
         'time_spent': end_time - start_time,
         'memory_used': peak,
-        'states_generated': len(algorithm.visited_states)
+        'states_generated': states_count
     }
 
 
@@ -31,7 +38,8 @@ def main():
     algorithms = {
         'A*': ASTAR(),
         'Greedy': Greedy(),
-        'BFS': BFS()
+        'BFS': BFS(),
+        'DFS': DFS()
     }
 
     results = {}
@@ -55,7 +63,9 @@ def main():
     axs[2].set_title('States Generated')
 
     plt.tight_layout()
-    plt.show()
+    # At the end of the main function, add:
+    plt.savefig('algorithm_comparison.png')  # Save to a file
+    plt.show()  # Still try to show it as well
 
 
 if __name__ == "__main__":

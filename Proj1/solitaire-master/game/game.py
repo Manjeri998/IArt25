@@ -116,8 +116,7 @@ def game_loop():
     ]
 
     a_star_states = []
-    history_stack = []
-    deck = Deck.load_deck_from_file("states/deck8.txt")
+    deck = Deck.load_deck_from_file("states/deck11.txt")
     deck.update(None, display_dimensions[1])
 
     hm = history_manager.HistoryManager(deck.clone())
